@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RegenEngine · Sprint 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#167A5A;--primary-h:#116248;--fg:#15263A;--bg:#F6F8F7;--card:#FFFFFF;--border:#DDE3E1;
+  --muted:#4F5B60;--sage:#DCECE5;--gold:#F6E6C8;--amber-t:#8A5606;
+  --shadow:0 1px 2px rgba(21,38,58,.06),0 2px 8px rgba(21,38,58,.04);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --primary:#3DB487;--primary-h:#58C69A;--fg:#E6ECEA;--bg:#0F1A17;--card:#16231F;--border:#2A3A35;
+  --muted:#9AAAA5;--sage:#1E3A30;--gold:#3A3020;--amber-t:#E8B860;--shadow:none;}}
+:root[data-theme="dark"]{
+  --primary:#3DB487;--primary-h:#58C69A;--fg:#E6ECEA;--bg:#0F1A17;--card:#16231F;--border:#2A3A35;
+  --muted:#9AAAA5;--sage:#1E3A30;--gold:#3A3020;--amber-t:#E8B860;--shadow:none;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding:28px 24px 64px}
+header.top{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:flex-end;margin-bottom:28px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--primary)}
+h1{font-size:28px;line-height:1.2;margin:4px 0 6px;letter-spacing:-.01em}
+.sub{color:var(--muted);max-width:640px;margin:0}
+.tools{display:flex;gap:8px;align-items:center}
+.lang{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;height:34px}
+.lang button{border:0;background:var(--card);color:var(--muted);font:600 12px Inter,sans-serif;padding:0 12px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--primary);color:#fff}
+.btn{font:600 13px Inter,sans-serif;height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--fg);cursor:pointer}
+.btn:hover{border-color:var(--primary)}
+.pages{display:grid;gap:12px}
+a.page{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 18px 16px;box-shadow:var(--shadow)}
+a.page:hover{border-color:var(--primary)}
+.kicker{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--primary)}
+a.page h2{font-size:18px;line-height:1.3;margin:4px 0 6px}
+a.page p{margin:0;color:var(--muted)}
+.meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:14px;font-size:12px;font-weight:600;color:var(--muted)}
+.meta .go{color:var(--primary)}
+footer{margin-top:28px;color:var(--muted);font-size:12px}
+@media (max-width:700px){
+  .wrap{padding:20px 16px 48px}
+  h1{font-size:22px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="title"></h1>
+    <p class="sub" id="sub"></p>
+  </div>
+  <div class="tools">
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en">EN</button>
+      <button type="button" data-lang="vi">VI</button>
+    </div>
+    <button class="btn" type="button" id="themeBtn"></button>
+  </div>
+</header>
+<nav class="pages" id="pages" aria-label="Documents"></nav>
+<footer id="footer"></footer>
+</div>
+<script>
+/*
+  Add a document later by dropping its HTML file next to this page,
+  then adding one object below. Other files do not need to change.
+*/
+const PAGES = [
+  {
+    href: "RegenEngine_Sprint2_Implementation_Plan_102926.html",
+    kicker: ["Plan", "Kế hoạch"],
+    title: ["Sprint 2 Implementation Plan", "Kế hoạch triển khai Sprint 2"],
+    desc: [
+      "32 approved tasks for AI Service and App, Mon 2 Nov – Fri 27 Nov 2026. Week plan, task status, team capacity, customer inputs, and definition of done.",
+      "32 task đã duyệt cho AI Service và App, từ T2 2/11 đến T6 27/11/2026. Kế hoạch theo tuần, trạng thái task, năng lực team, đầu vào khách hàng và định nghĩa hoàn thành."
+    ],
+    meta: ["29 Oct 2026", "29/10/2026"]
+  }
+];
+
+const KEY = "regen-s2-hub";
+const COPY = {
+  eyebrow: ["RegenEngine · Phase 1 · Sprint 2", "RegenEngine · Giai đoạn 1 · Sprint 2"],
+  title: ["Documents", "Tài liệu"],
+  sub: [
+    "Overview of the sprint pages. Each document lives in its own file, so a later update stays in that file.",
+    "Trang tổng quan các tài liệu sprint. Mỗi tài liệu nằm trong file riêng, nên bản cập nhật sau này chỉ nằm ở file đó."
+  ],
+  theme: ["◐ Theme", "◐ Giao diện"],
+  open: ["Open", "Mở"],
+  footer: ["Digiex · RegenEngine Phase 1 Sprint 2", "Digiex · RegenEngine Giai đoạn 1 Sprint 2"]
+};
+
+let LANG = "en";
+try {
+  const saved = localStorage.getItem(KEY + "-lang");
+  if (saved === "vi" || saved === "en") LANG = saved;
+} catch (e) {}
+
+const L = (pair) => pair[LANG === "vi" ? 1 : 0];
+
+function applyTheme(theme) {
+  if (theme === "dark" || theme === "light") document.documentElement.dataset.theme = theme;
+  else delete document.documentElement.dataset.theme;
+  try { localStorage.setItem(KEY + "-theme", theme || "system"); } catch (e) {}
+}
+
+try {
+  const theme = localStorage.getItem(KEY + "-theme");
+  if (theme === "dark" || theme === "light") applyTheme(theme);
+} catch (e) {}
+
+function render() {
+  document.documentElement.lang = LANG;
+  document.getElementById("eyebrow").textContent = L(COPY.eyebrow);
+  document.getElementById("title").textContent = L(COPY.title);
+  document.getElementById("sub").textContent = L(COPY.sub);
+  document.getElementById("themeBtn").textContent = L(COPY.theme);
+  document.getElementById("footer").textContent = L(COPY.footer);
+  document.querySelectorAll(".lang button").forEach((btn) => {
+    btn.setAttribute("aria-pressed", String(btn.dataset.lang === LANG));
+  });
+  document.getElementById("pages").innerHTML = PAGES.map((page) => `
+    <a class="page" href="${page.href}">
+      <div class="kicker">${L(page.kicker)}</div>
+      <h2>${L(page.title)}</h2>
+      <p>${L(page.desc)}</p>
+      <div class="meta"><span>${L(page.meta)}</span><span class="go">${L(COPY.open)} →</span></div>
+    </a>`).join("");
+}
+
+document.querySelectorAll(".lang button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    LANG = btn.dataset.lang;
+    try { localStorage.setItem(KEY + "-lang", LANG); } catch (e) {}
+    render();
+  });
+});
+
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const current = document.documentElement.dataset.theme;
+  const next = current === "dark" ? "light" : current === "light" ? "" : "dark";
+  applyTheme(next);
+});
+
+render();
+</script>
+</body>
+</html>

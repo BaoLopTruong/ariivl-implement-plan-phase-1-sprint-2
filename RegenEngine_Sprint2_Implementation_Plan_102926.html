@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprint 2 Implementation Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#167A5A;--primary-h:#116248;--fg:#15263A;--bg:#F6F8F7;--card:#FFFFFF;--border:#DDE3E1;
+  --muted:#4F5B60;--sage:#DCECE5;--gold:#F6E6C8;--amber-t:#8A5606;
+  --ai:#1F6FB2;--ai-bg:#E3EEF8;--app:#167A5A;--app-bg:#DCECE5;--sh:#6B5B95;--sh-bg:#ECE8F4;
+  --warn:#B4441F;--warn-bg:#FBE7DF;--ok:#167A5A;--prog:#1F6FB2;--qa:#8A5606;--blk:#B4441F;
+  --shadow:0 1px 2px rgba(21,38,58,.06),0 2px 8px rgba(21,38,58,.04);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --primary:#3DB487;--primary-h:#58C69A;--fg:#E6ECEA;--bg:#0F1A17;--card:#16231F;--border:#2A3A35;
+  --muted:#9AAAA5;--sage:#1E3A30;--gold:#3A3020;--amber-t:#E8B860;
+  --ai:#6FA9E0;--ai-bg:#18293A;--app:#3DB487;--app-bg:#173328;--sh:#B3A3DD;--sh-bg:#262036;
+  --warn:#F08A66;--warn-bg:#3A2019;--ok:#3DB487;--prog:#6FA9E0;--qa:#E8B860;--blk:#F08A66;
+  --shadow:none;}}
+:root[data-theme="dark"]{
+  --primary:#3DB487;--primary-h:#58C69A;--fg:#E6ECEA;--bg:#0F1A17;--card:#16231F;--border:#2A3A35;
+  --muted:#9AAAA5;--sage:#1E3A30;--gold:#3A3020;--amber-t:#E8B860;
+  --ai:#6FA9E0;--ai-bg:#18293A;--app:#3DB487;--app-bg:#173328;--sh:#B3A3DD;--sh-bg:#262036;
+  --warn:#F08A66;--warn-bg:#3A2019;--ok:#3DB487;--prog:#6FA9E0;--qa:#E8B860;--blk:#F08A66;--shadow:none;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;margin:0 auto;padding:28px 24px 64px}
+header.top{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--primary)}
+h1{font-size:28px;line-height:1.2;margin:4px 0 6px;letter-spacing:-.01em}
+.sub{color:var(--muted);max-width:720px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:18px 0 22px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow)}
+.kpi b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.kpi span{color:var(--muted);font-size:12px}
+.bar-prog{height:6px;background:var(--border);border-radius:3px;margin-top:8px;overflow:hidden}
+.bar-prog i{display:block;height:100%;background:var(--primary);width:0;transition:width .3s}
+nav.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;font:600 14px Inter,sans-serif;color:var(--muted);cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--primary)}
+.panel{display:none}.panel.on{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+select,input[type=search],input[type=text],input[type=number]{font:13px Inter,sans-serif;color:var(--fg);background:var(--card);border:1px solid var(--border);border-radius:8px;height:34px;padding:0 10px}
+input[type=search]{min-width:220px;flex:1;max-width:320px}
+.btn{font:600 13px Inter,sans-serif;height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--fg);cursor:pointer}
+.btn:hover{border-color:var(--primary)}
+.btn.pri{background:var(--primary);border-color:var(--primary);color:#fff}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.t-ai{background:var(--ai-bg);color:var(--ai)}.t-app{background:var(--app-bg);color:var(--app)}.t-shared{background:var(--sh-bg);color:var(--sh)}
+.need{background:var(--gold);color:var(--amber-t)}
+.moved{background:var(--sage);color:var(--primary)}
+/* Gantt */
+.gantt{overflow-x:auto}
+.g-grid{min-width:900px;display:grid;grid-template-columns:minmax(300px,1.4fr) repeat(4,minmax(130px,1fr))}
+.g-h{position:sticky;top:0;background:var(--card);padding:12px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--muted);z-index:1}
+.g-h b{display:block;color:var(--fg);font-size:13px}
+.g-h .ms{display:block;margin-top:6px;font-weight:500;color:var(--amber-t);font-size:11px;line-height:1.4}
+.g-lane{grid-column:1/-1;padding:10px 12px;font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center}
+.g-lane small{font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted)}
+.g-name{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;min-width:0;cursor:pointer}
+.g-name:hover .tn{color:var(--primary)}
+.g-name .id{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px;width:26px;flex:none}
+.g-name .tn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.g-name .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.g-cells{grid-column:2/-1;display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border);position:relative}
+.g-cells>div{border-left:1px dashed var(--border)}
+.g-bar{position:absolute;top:7px;bottom:7px;border-radius:6px;font-size:11px;font-weight:600;display:flex;align-items:center;padding:0 8px;color:#fff;white-space:nowrap;overflow:hidden;cursor:pointer}
+.g-bar.ai{background:var(--ai)}.g-bar.app{background:var(--app)}.g-bar.shared{background:var(--sh)}
+.g-bar.done{opacity:.45}
+.freeze{position:absolute;top:0;bottom:0;left:75%;border-left:2px solid var(--warn);pointer-events:none}
+/* Table */
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--card);cursor:pointer;user-select:none}
+td.num{font-variant-numeric:tabular-nums;text-align:right}
+.tbl{overflow-x:auto}
+.tbl table{min-width:1180px}
+.tbl td:nth-child(2){max-width:340px}
+.tbl td:last-child{width:240px}
+textarea.tnote{min-height:52px;width:100%;min-width:200px;resize:vertical;font-size:12px;padding:6px 8px;background:var(--card)}
+input.own{width:120px}
+tr.row:hover td{background:color-mix(in srgb,var(--sage) 35%,transparent)}
+.tt{font-weight:600}
+.meta{color:var(--muted);font-size:12px}
+.crit{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:12px;display:none}
+tr.open .crit{display:block}
+.exp{background:none;border:0;color:var(--primary);font:600 12px Inter;cursor:pointer;padding:0;margin-top:4px}
+select.st{height:30px;font-weight:600;font-size:12px}
+.st-todo{color:var(--muted)}.st-prog{color:var(--prog)}.st-qa{color:var(--qa)}.st-done{color:var(--ok)}.st-blk{color:var(--blk)}
+input.own{height:30px;width:140px}
+/* Capacity */
+.cap-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cap h3{margin:0 0 4px;font-size:16px}
+.cap{padding:18px}
+.cap table td,.cap table th{padding:8px 6px;font-size:13px}
+.cap th{position:static;cursor:default}
+.cell{font-variant-numeric:tabular-nums;text-align:center;border-radius:6px}
+.over{background:var(--warn-bg);color:var(--warn);font-weight:700}
+.hc{width:56px;height:28px}
+.note{background:var(--gold);color:var(--amber-t);border-radius:10px;padding:12px 14px;font-size:13px;margin-top:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.list{padding:6px 0}
+.list .it{display:flex;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);align-items:flex-start}
+.list .it:last-child{border-bottom:0}
+.list input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary);margin-top:2px;flex:none}
+.list .it.ck .lbl{text-decoration:line-through;color:var(--muted)}
+.list .due{margin-left:auto;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;text-align:right}
+h2{font-size:16px;margin:0;padding:16px 18px 4px}
+.h2sub{padding:0 18px 10px;color:var(--muted);font-size:13px;margin:0}
+.tl{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-bottom:18px}
+.tl .m{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px;position:relative}
+.tl .m b{display:block;font-size:13px}
+.tl .m.past{opacity:.55}
+.tl .m.next{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
+.tl .m .d{color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+footer{margin-top:28px;color:var(--muted);font-size:12px}
+/* drawer */
+.dlg{position:fixed;inset:0;background:rgba(10,20,18,.45);display:none;align-items:flex-start;justify-content:flex-end;z-index:20}
+.dlg.on{display:flex}
+.dlg .box{background:var(--card);width:min(520px,100%);height:100%;overflow:auto;padding:24px;border-left:1px solid var(--border)}
+.dlg h3{margin:8px 0 6px;font-size:18px;line-height:1.3}
+.dlg dl{display:grid;grid-template-columns:120px 1fr;gap:8px 12px;font-size:13px;margin:16px 0}
+.dlg dt{color:var(--muted)}
+.dlg ol{padding-left:20px;margin:6px 0 16px}
+.dlg li{margin-bottom:6px}
+.x{float:right;background:none;border:0;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
+textarea{width:100%;min-height:80px;font:13px Inter,sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.sync{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin:-6px 0 14px}
+.sync .sdot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.sync.dirty .sdot{background:var(--qa)}.sync.err .sdot{background:var(--warn)}.sync.busy .sdot{background:var(--prog)}
+.sync.dirty{color:var(--amber-t);font-weight:600}.sync.err{color:var(--warn);font-weight:600}
+.fld{display:block;margin:0 0 12px;font-size:13px;font-weight:600}
+.fld input{display:block;width:100%;margin-top:4px;font-weight:400}
+.fld small{display:block;font-weight:400;color:var(--muted);margin-top:3px}
+@media (max-width:900px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .cap-grid,.two{grid-template-columns:1fr}
+  .tl{grid-template-columns:repeat(2,1fr)}
+  .wrap{padding:20px 16px 48px}
+  h1{font-size:22px}
+}
+@media print{nav.tabs,.filters,.btn{display:none}.panel{display:block!important;page-break-after:always}}
+.lang{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;height:34px}
+.lang button{border:0;background:var(--card);color:var(--muted);font:600 12px Inter,sans-serif;padding:0 12px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--primary);color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div>
+    <div class="eyebrow" data-i="eyebrow"></div>
+    <h1 data-i="title"></h1>
+    <div class="sub" data-i="sub"></div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <div class="lang" role="group" aria-label="Language"><button data-lang="en">EN</button><button data-lang="vi">VI</button></div>
+    <button class="btn" id="themeBtn" data-i="theme"></button>
+    <button class="btn" id="csvBtn" data-i="csv"></button>
+    <button class="btn" id="loadBtn" data-i="load"></button>
+    <button class="btn pri" id="saveBtn" data-i="save"></button>
+    <button class="btn" id="ghBtn" data-it="ghTip">⚙</button>
+  </div>
+</header>
+<div class="sync" id="sync"><span class="sdot"></span><span id="syncTxt"></span></div>
+
+<div class="kpis" id="kpis"></div>
+<div class="tl" id="timeline"></div>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" data-p="plan" aria-selected="true" data-i="tabPlan"></button>
+  <button role="tab" data-p="tasks" aria-selected="false" data-i="tabTasks"></button>
+  <button role="tab" data-p="team" aria-selected="false" data-i="tabTeam"></button>
+  <button role="tab" data-p="inputs" aria-selected="false" data-i="tabInputs"></button>
+  <button role="tab" data-p="ready" aria-selected="false" data-i="tabReady"></button>
+</nav>
+
+<section class="panel on" id="p-plan">
+  <div class="filters">
+    <select id="gTeam"></select>
+    <span class="meta" data-i="ganttHint"></span>
+  </div>
+  <div class="card gantt"><div class="g-grid" id="gantt"></div></div>
+</section>
+
+<section class="panel" id="p-tasks">
+  <div class="filters">
+    <input type="search" id="q">
+    <select id="fTeam"></select>
+    <select id="fFeat"></select>
+    <select id="fWeek"></select>
+    <select id="fStat"></select>
+    <span class="meta" id="count"></span>
+  </div>
+  <div class="card tbl"><table>
+    <thead><tr id="thead"></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table></div>
+</section>
+
+<section class="panel" id="p-team">
+  <div class="cap-grid" id="capGrid"></div>
+  <div class="note" id="capNote"></div>
+</section>
+
+<section class="panel" id="p-inputs">
+  <div class="card">
+    <h2 data-i="inTitle"></h2>
+    <p class="h2sub" data-i="inSub"></p>
+    <div class="list" id="inputs"></div>
+  </div>
+</section>
+
+<section class="panel" id="p-ready">
+  <div class="two">
+    <div class="card"><h2 data-i="bfTitle"></h2><p class="h2sub" data-i="bfSub"></p><div class="list" id="before"></div></div>
+    <div class="card"><h2 data-i="dodTitle"></h2><p class="h2sub" data-i="dodSub"></p><div class="list" id="dod"></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2 data-i="apiTitle"></h2>
+    <p class="h2sub" data-i="apiSub"></p>
+    <div class="tbl"><table style="min-width:0"><thead><tr><th style="cursor:default" data-i="apiIf"></th><th style="cursor:default" data-i="apiWhat"></th></tr></thead><tbody id="api"></tbody></table></div>
+  </div>
+</section>
+
+<footer data-i="footer"></footer>
+</div>
+
+<div class="dlg" id="dlg" role="dialog" aria-modal="true"><div class="box" id="dlgBox"></div></div>
+
+<!-- Saved progress. "Save progress" rewrites only this block. -->
+<script id="progress-data" type="application/json">{}</script>
+<script>
+const TASKS = [{"id": 24, "module": "Research Engine", "feature": "D1.6 — LLM Internet Research Engine V1", "task": "Provider abstraction/orchestration layer + single-LLM SDK integration with failover", "crit": ["provider abstraction/orchestration layer with retry & failover (S0.3 §5)", "single-LLM SDK integration works", "provider swappable without changing calling code. Start with the core research matrix"], "role": "AI/ML Engineer", "md": 3, "orig": 6, "team": "ai", "ws": 1, "we": 1, "needs": ["llm", "proposal"], "moved": false, "task_vi": "Lớp trừu tượng/điều phối nhà cung cấp LLM + tích hợp SDK một LLM có failover", "crit_vi": ["Lớp trừu tượng/điều phối nhà cung cấp có retry & failover (S0.3 §5)", "Tích hợp SDK một LLM hoạt động", "Đổi nhà cung cấp mà không phải sửa code gọi. Bắt đầu với ma trận nghiên cứu cốt lõi"]}, {"id": 25, "module": "Research Engine", "feature": "D1.6 — LLM Internet Research Engine V1", "task": "Agentic research workflows: market/TAM-SAM-SOM, competition/SWOT, entity & IP verification", "crit": ["agentic research covers market/TAM-SAM-SOM, competition/SWOT and entity & IP verification", "each source is live & callable (not stubbed)", "source attribution on every claim"], "role": "AI/ML Engineer", "md": 4, "orig": 8, "team": "ai", "ws": 1, "we": 1, "needs": ["llm", "proposal"], "moved": false, "task_vi": "Quy trình nghiên cứu agentic: thị trường/TAM-SAM-SOM, cạnh tranh/SWOT, xác minh pháp nhân & IP", "crit_vi": ["Nghiên cứu agentic bao phủ thị trường/TAM-SAM-SOM, cạnh tranh/SWOT và xác minh pháp nhân & IP", "Mọi nguồn đều chạy thật & gọi được (không stub)", "Mọi nhận định đều có ghi nguồn"]}, {"id": 26, "module": "Research Engine", "feature": "D1.6 — LLM Internet Research Engine V1", "task": "RAG grounding, source attribution, confidence scoring, hallucination controls", "crit": ["RAG grounding with a retrievable source per claim (unsourced claim = defect)", "confidence scoring High/Med/Low", "no fabricated claim presented as sourced (S0.5 harness)"], "role": "AI/ML Engineer", "md": 3, "orig": 6, "team": "ai", "ws": 2, "we": 2, "needs": ["llm"], "moved": false, "task_vi": "RAG grounding, ghi nguồn, chấm độ tin cậy, kiểm soát hallucination", "crit_vi": ["RAG grounding với nguồn truy xuất được cho từng nhận định (nhận định không có nguồn = lỗi)", "Chấm độ tin cậy High/Med/Low", "Không có nhận định bịa đặt nào được trình bày như có nguồn (harness S0.5)"]}, {"id": 27, "module": "Research Engine", "feature": "D1.6 — LLM Internet Research Engine V1", "task": "Audit trail, reproducibility, async/background processing, rate-limit & retry", "crit": ["auditable trail (prompt version, model, sources, request IDs, timestamps, tokens)", "runs reproducible", "async/background", "per-source rate-limit, retry & backoff"], "role": "Senior Backend Engineer", "md": 2, "orig": 5, "team": "ai", "ws": 1, "we": 1, "needs": [], "moved": false, "task_vi": "Audit trail, khả năng tái lập, xử lý async/chạy nền, rate-limit & retry", "crit_vi": ["Audit trail đầy đủ (phiên bản prompt, model, nguồn, request ID, thời điểm, token)", "Các lần chạy tái lập được", "Chạy async/chạy nền", "Rate-limit, retry & backoff theo từng nguồn"]}, {"id": 28, "module": "AI Analysis Engine", "feature": "D1.7 — AI Analysis Engine V1", "task": "Analysis orchestrator: input normalization, document parsing, structured output schemas", "crit": ["inputs normalized & documents parsed to the structured schema", "unsupported types error clearly", "each run traceable"], "role": "AI/ML Engineer", "md": 3, "orig": 6, "team": "ai", "ws": 1, "we": 2, "needs": ["proposal"], "moved": false, "task_vi": "Bộ điều phối phân tích: chuẩn hoá đầu vào, phân tích tài liệu, schema đầu ra có cấu trúc", "crit_vi": ["Đầu vào được chuẩn hoá & tài liệu được parse theo schema có cấu trúc", "Loại tệp không hỗ trợ báo lỗi rõ ràng", "Mỗi lần chạy đều truy vết được"]}, {"id": 29, "module": "AI Analysis Engine", "feature": "D1.7 — AI Analysis Engine V1", "task": "Analysis prompts across all required categories (concept→fundraising readiness)", "crit": ["analysis covers all nine SOW categories + document analysis, each with sub-factors", "a missing category/sub-factor is a defect"], "role": "AI/ML Engineer", "md": 8, "orig": 8, "team": "ai", "ws": 2, "we": 3, "needs": ["proposal"], "moved": false, "task_vi": "Prompt phân tích cho tất cả hạng mục bắt buộc (từ ý tưởng → sẵn sàng gọi vốn)", "crit_vi": ["Phân tích bao phủ đủ chín hạng mục SOW + phân tích tài liệu, mỗi hạng mục có các yếu tố con", "Thiếu một hạng mục/yếu tố con là lỗi"]}, {"id": 30, "module": "AI Analysis Engine", "feature": "D1.7 — AI Analysis Engine V1", "task": "Consistency review: contradictions, missing info, unsupported assertions, confidence levels", "crit": ["contradictions, missing info & unsupported assertions identified per SOW definitions", "confidence High/Med/Low per finding"], "role": "AI/ML Engineer", "md": 6, "orig": 6, "team": "ai", "ws": 2, "we": 3, "needs": ["proposal"], "moved": false, "task_vi": "Rà soát nhất quán: mâu thuẫn, thiếu thông tin, khẳng định không có căn cứ, mức độ tin cậy", "crit_vi": ["Xác định mâu thuẫn, thông tin thiếu & khẳng định không có căn cứ theo định nghĩa SOW", "Độ tin cậy High/Med/Low cho từng phát hiện"]}, {"id": 31, "module": "AI Analysis Engine", "feature": "D1.7 — AI Analysis Engine V1", "task": "Incremental/async section analysis to meet 15s performance target", "crit": ["section analysis ≤15s under S0.5 load/concurrency", "the execution model (incremental vs async) is documented"], "role": "Senior Backend Engineer", "md": 5, "orig": 5, "team": "ai", "ws": 3, "we": 3, "needs": [], "moved": false, "task_vi": "Phân tích từng phần/async theo section để đạt mục tiêu 15 giây", "crit_vi": ["Phân tích một section ≤15s dưới tải/đồng thời theo S0.5", "Mô hình thực thi (incremental hay async) được ghi lại trong tài liệu"]}, {"id": 32, "module": "AI Analysis Engine", "feature": "D1.7 — AI Analysis Engine V1", "task": "AI evaluation & calibration harness (accuracy, no-hallucination acceptance)", "crit": ["accuracy meets the S0.5 threshold vs the labelled reference set", "hallucination controls hold", "reproducible & regression-testable in CI"], "role": "QA Engineer", "md": 4, "orig": 4, "team": "ai", "ws": 2, "we": 4, "needs": ["refs"], "moved": false, "task_vi": "Harness đánh giá & hiệu chỉnh AI (độ chính xác, nghiệm thu không hallucination)", "crit_vi": ["Độ chính xác đạt ngưỡng S0.5 so với bộ tham chiếu đã gán nhãn", "Kiểm soát hallucination được duy trì", "Tái lập được & chạy test hồi quy trong CI"]}, {"id": 33, "module": "Scoring Engine", "feature": "D1.8 — Scoring Engine V1", "task": "Configurable scoring framework: category/weighted/composite/qualification scores", "crit": ["category/weighted/composite (0–100) & qualification scores produced", "10 categories map 1:1 to questionnaire sections", "Qualified = ≥75 with no section <65 (both must hold)"], "role": "AI/ML Engineer", "md": 6, "orig": 6, "team": "ai", "ws": 1, "we": 1, "needs": ["proposal"], "moved": false, "task_vi": "Khung chấm điểm cấu hình được: điểm hạng mục/có trọng số/tổng hợp/đủ điều kiện", "crit_vi": ["Tạo được điểm hạng mục/có trọng số/tổng hợp (0–100) & điểm đủ điều kiện", "10 hạng mục ánh xạ 1:1 với các section của bảng câu hỏi", "Qualified = ≥75 và không section nào <65 (phải đạt cả hai)"]}, {"id": 34, "module": "Scoring Engine", "feature": "D1.8 — Scoring Engine V1", "task": "Score aggregator & persistence with history/versioning", "crit": ["deterministic (identical inputs → identical scores)", "versioned (re-score creates a new version)", "score history retained & retrievable"], "role": "Senior Backend Engineer", "md": 4, "orig": 4, "team": "ai", "ws": 2, "we": 2, "needs": [], "moved": false, "task_vi": "Bộ tổng hợp điểm & lưu trữ có lịch sử/phiên bản", "crit_vi": ["Tất định (cùng đầu vào → cùng điểm)", "Có phiên bản (chấm lại tạo phiên bản mới)", "Lịch sử điểm được lưu & truy xuất được"]}, {"id": 35, "module": "Scoring Engine", "feature": "D1.8 — Scoring Engine V1", "task": "Admin scoring controls (weights, thresholds, categories — no-code)", "crit": ["weights/thresholds and add/disable categories editable via the Admin Console without code", "changes validated & audit-logged", "effective without redeploy/restart"], "role": "Senior Backend Engineer", "md": 4, "orig": 4, "team": "app", "ws": 3, "we": 3, "needs": [], "moved": false, "task_vi": "Admin điều chỉnh chấm điểm (trọng số, ngưỡng, hạng mục — không cần code)", "crit_vi": ["Sửa trọng số/ngưỡng và thêm/tắt hạng mục qua Admin Console mà không cần code", "Thay đổi được kiểm tra hợp lệ & ghi audit log", "Có hiệu lực ngay, không cần redeploy/restart"]}, {"id": 36, "module": "Scoring Engine", "feature": "D1.8 — Scoring Engine V1", "task": "Scoring engine test suite & calibration", "crit": ["tests cover boundary, weighting & qualification (incl. 75/65 boundaries)", "calibrated vs the S0.5 reference set; coverage ≥90/70 (D1.8)"], "role": "QA Engineer", "md": 3, "orig": 3, "team": "ai", "ws": 2, "we": 3, "needs": ["refs"], "moved": false, "task_vi": "Bộ test & hiệu chỉnh scoring engine", "crit_vi": ["Test bao phủ giá trị biên, trọng số & điều kiện Qualified (gồm biên 75/65)", "Hiệu chỉnh theo bộ tham chiếu S0.5; coverage ≥90/70 (D1.8)"]}, {"id": 37, "module": "Visualization Engine", "feature": "D1.9 — Visualization Engine V1", "task": "Chart components: radar, bubble/vector, pie, score distribution, strength/weakness, status", "crit": ["all seven charts render from live scoring data", "responsive & accessible to the design system", "empty/partial-data states handled"], "role": "Senior Frontend Engineer", "md": 8, "orig": 8, "team": "app", "ws": 1, "we": 1, "needs": [], "moved": false, "task_vi": "Component biểu đồ: radar, bubble/vector, pie, phân bố điểm, điểm mạnh/yếu, trạng thái", "crit_vi": ["Cả bảy biểu đồ hiển thị từ dữ liệu chấm điểm thật", "Responsive & đạt chuẩn accessibility theo design system", "Xử lý trạng thái rỗng/thiếu dữ liệu"]}, {"id": 38, "module": "Visualization Engine", "feature": "D1.9 — Visualization Engine V1", "task": "Admin chart config (add/modify charts, labels, categories — no-code)", "crit": ["add/modify charts, labels & categories without code", "config persists & renders immediately", "approvals/versioning/audit/rollback/effective-date governance"], "role": "Senior Frontend Engineer", "md": 4, "orig": 4, "team": "app", "ws": 3, "we": 3, "needs": [], "moved": false, "task_vi": "Admin cấu hình biểu đồ (thêm/sửa biểu đồ, nhãn, hạng mục — không cần code)", "crit_vi": ["Thêm/sửa biểu đồ, nhãn & hạng mục không cần code", "Cấu hình được lưu & hiển thị ngay", "Quản trị phê duyệt/phiên bản/audit/rollback/ngày hiệu lực"]}, {"id": 39, "module": "Reporting Engine", "feature": "D1.10 — Reporting Engine V1", "task": "Summary + detailed report generation pipeline (dynamic narrative, scoring rationale)", "crit": ["summary & detailed reports per SOW content", "narrative, rationale & guidance dynamically generated (not templated)", "reflect the venture's actual scores/analysis/research"], "role": "AI/ML Engineer", "md": 6, "orig": 6, "team": "ai", "ws": 3, "we": 3, "needs": ["proposal"], "moved": false, "task_vi": "Pipeline tạo báo cáo tóm tắt + chi tiết (diễn giải động, lý do chấm điểm)", "crit_vi": ["Báo cáo tóm tắt & chi tiết theo nội dung SOW", "Diễn giải, lý do & hướng dẫn được sinh động (không dùng mẫu cố định)", "Phản ánh đúng điểm/phân tích/nghiên cứu thực tế của venture"]}, {"id": 40, "module": "Reporting Engine", "feature": "D1.10 — Reporting Engine V1", "task": "Report assembly, branded PDF rendering, object-storage persistence & metadata", "crit": ["branded PDF matches the approved S0.2 template", "persisted to object storage with metadata", "retrievable by signed URL; long/edge content renders cleanly"], "role": "Senior Backend Engineer", "md": 5, "orig": 5, "team": "ai", "ws": 2, "we": 3, "needs": ["pdf"], "moved": false, "task_vi": "Ghép báo cáo, xuất PDF theo thương hiệu, lưu object storage & metadata", "crit_vi": ["PDF thương hiệu khớp mẫu S0.2 đã duyệt", "Lưu vào object storage kèm metadata", "Truy xuất bằng signed URL; nội dung dài/trường hợp biên hiển thị gọn gàng"]}, {"id": 41, "module": "Reporting Engine", "feature": "D1.10 — Reporting Engine V1", "task": "Report UI (on-screen, downloadable, printable/shareable) + delivery", "crit": ["on-screen, downloadable, printable/shareable + email delivery", "status (quotes/tips) shown while waiting", "generation ≤45s under S0.5 load"], "role": "Senior Frontend Engineer", "md": 6, "orig": 6, "team": "app", "ws": 3, "we": 3, "needs": [], "moved": false, "task_vi": "UI báo cáo (xem trên màn hình, tải về, in/chia sẻ) + gửi báo cáo", "crit_vi": ["Xem trên màn hình, tải về, in/chia sẻ + gửi qua email", "Hiển thị trạng thái (trích dẫn/mẹo) trong lúc chờ", "Tạo báo cáo ≤45s dưới tải S0.5"]}, {"id": 42, "module": "Reporting Engine", "feature": "D1.10 — Reporting Engine V1", "task": "Report quality regression tests (format, accuracy, auto-update on score change)", "crit": ["format & accuracy regression-tested", "reports auto-update when scores change", "a reference report is signed off as the quality bar"], "role": "QA Engineer", "md": 3, "orig": 3, "team": "ai", "ws": 3, "we": 4, "needs": ["pdf"], "moved": false, "task_vi": "Test hồi quy chất lượng báo cáo (định dạng, độ chính xác, tự cập nhật khi điểm đổi)", "crit_vi": ["Định dạng & độ chính xác có test hồi quy", "Báo cáo tự cập nhật khi điểm thay đổi", "Một báo cáo tham chiếu được duyệt làm chuẩn chất lượng"]}, {"id": 43, "module": "Admin Console", "feature": "D1.12 — Administrative Console V1", "task": "Admin user & venture management (view/search/suspend/delete, RBAC, approvals)", "crit": ["view/search/suspend/delete users & ventures under least-privilege RBAC", "sensitive actions gated by approval workflow", "all admin actions audit-logged"], "role": "Senior Backend Engineer", "md": 2.5, "orig": 2.5, "team": "app", "ws": 1, "we": 1, "needs": [], "moved": true, "task_vi": "Admin quản lý user & venture (xem/tìm/tạm khoá/xoá, RBAC, phê duyệt)", "crit_vi": ["Xem/tìm/tạm khoá/xoá user & venture theo RBAC quyền tối thiểu", "Thao tác nhạy cảm phải qua quy trình phê duyệt", "Mọi thao tác admin đều ghi audit log"]}, {"id": 44, "module": "Founder DNA", "feature": "F2.2 — Founder DNA Assessment", "task": "Founder DNA questionnaire engine (characteristics, personality, leadership)", "crit": ["Founder-DNA questionnaire engine works", "configurable without code"], "role": "Senior Backend Engineer", "md": 6, "orig": 6, "team": "app", "ws": 1, "we": 2, "needs": ["dna"], "moved": true, "task_vi": "Engine bảng câu hỏi Founder DNA (đặc điểm, tính cách, năng lực lãnh đạo)", "crit_vi": ["Engine bảng câu hỏi Founder DNA hoạt động", "Cấu hình được mà không cần code"]}, {"id": 45, "module": "Founder DNA", "feature": "F2.2 — Founder DNA Assessment", "task": "Founder DNA scoring algorithms (tenacity, charisma, vision, resilience, etc.)", "crit": ["DNA scoring is deterministic & versioned", "calibrated to a reference set"], "role": "AI/ML Engineer", "md": 7, "orig": 7, "team": "ai", "ws": 2, "we": 2, "needs": ["dna"], "moved": true, "task_vi": "Thuật toán chấm điểm Founder DNA (bền bỉ, sức hút, tầm nhìn, khả năng phục hồi…)", "crit_vi": ["Chấm điểm DNA tất định & có phiên bản", "Được hiệu chỉnh theo bộ tham chiếu"]}, {"id": 46, "module": "Founder DNA", "feature": "F2.2 — Founder DNA Assessment", "task": "Founder DNA AI research, leadership/domain/execution analysis & report", "crit": ["AI research + leadership/domain/execution analysis", "report with source attribution & confidence"], "role": "AI/ML Engineer", "md": 6, "orig": 6, "team": "ai", "ws": 3, "we": 3, "needs": ["dna"], "moved": true, "task_vi": "Nghiên cứu AI Founder DNA, phân tích lãnh đạo/chuyên môn/thực thi & báo cáo", "crit_vi": ["Nghiên cứu AI + phân tích lãnh đạo/chuyên môn/thực thi", "Báo cáo có ghi nguồn & độ tin cậy"]}, {"id": 47, "module": "Founder DNA", "feature": "F2.2 — Founder DNA Assessment", "task": "Founder DNA UI (questionnaire, scoring, report screens)", "crit": ["DNA questionnaire, scoring & report screens match design", "responsive", "wired to APIs"], "role": "Senior Frontend Engineer", "md": 8, "orig": 8, "team": "app", "ws": 2, "we": 2, "needs": ["dna"], "moved": true, "task_vi": "UI Founder DNA (màn hình bảng câu hỏi, chấm điểm, báo cáo)", "crit_vi": ["Màn hình bảng câu hỏi, chấm điểm & báo cáo DNA khớp thiết kế", "Responsive", "Đã kết nối API"]}, {"id": 48, "module": "Founder DNA", "feature": "F2.2 — Founder DNA Assessment", "task": "Founder DNA test suite & calibration", "crit": ["tests & calibration pass; coverage per S0.5"], "role": "QA Engineer", "md": 3, "orig": 3, "team": "app", "ws": 2, "we": 3, "needs": ["dna"], "moved": true, "task_vi": "Bộ test & hiệu chỉnh Founder DNA", "crit_vi": ["Test & hiệu chỉnh đạt; coverage theo S0.5"]}, {"id": 49, "module": "Investor Assessment", "feature": "F2.3 — Investor Assessment & Profile", "task": "Investor questionnaire & criteria model (AUM, IRR, stage, check size, geos, ESG, portcos)", "crit": ["investor criteria model (AUM, IRR, stage, check size, geos, ESG, portcos)", "validated on write"], "role": "Senior Backend Engineer", "md": 6, "orig": 6, "team": "app", "ws": 1, "we": 2, "needs": ["investor"], "moved": true, "task_vi": "Bảng câu hỏi & mô hình tiêu chí nhà đầu tư (AUM, IRR, giai đoạn, quy mô rót vốn, khu vực, ESG, danh mục)", "crit_vi": ["Mô hình tiêu chí nhà đầu tư (AUM, IRR, giai đoạn, quy mô rót vốn, khu vực, ESG, danh mục đầu tư)", "Kiểm tra hợp lệ khi ghi dữ liệu"]}, {"id": 50, "module": "Investor Assessment", "feature": "F2.3 — Investor Assessment & Profile", "task": "Investor AI validation research + portco/co-investor ratings", "crit": ["AI validation research + portco/co-investor ratings", "source-attributed & confidence-scored"], "role": "AI/ML Engineer", "md": 5, "orig": 5, "team": "ai", "ws": 3, "we": 3, "needs": ["investor"], "moved": true, "task_vi": "Nghiên cứu AI xác thực nhà đầu tư + đánh giá công ty danh mục/nhà đồng đầu tư", "crit_vi": ["Nghiên cứu AI xác thực + đánh giá công ty danh mục/nhà đồng đầu tư", "Có ghi nguồn & chấm độ tin cậy"]}, {"id": 51, "module": "Investor Assessment", "feature": "F2.3 — Investor Assessment & Profile", "task": "Investor portal UI (registration, dashboard, questionnaire, summary)", "crit": ["registration, dashboard, questionnaire & summary screens match design", "auth-scoped", "responsive"], "role": "Senior Frontend Engineer", "md": 8, "orig": 8, "team": "app", "ws": 2, "we": 3, "needs": ["investor"], "moved": true, "task_vi": "UI cổng nhà đầu tư (đăng ký, dashboard, bảng câu hỏi, tóm tắt)", "crit_vi": ["Màn hình đăng ký, dashboard, bảng câu hỏi & tóm tắt khớp thiết kế", "Phân quyền theo tài khoản", "Responsive"]}, {"id": 52, "module": "Investor Assessment", "feature": "F2.3 — Investor Assessment & Profile", "task": "Investor assessment test suite", "crit": ["tests pass in CI; coverage per S0.5"], "role": "QA Engineer", "md": 3, "orig": 3, "team": "app", "ws": 3, "we": 3, "needs": ["investor"], "moved": true, "task_vi": "Bộ test đánh giá nhà đầu tư", "crit_vi": ["Test chạy đạt trong CI; coverage theo S0.5"]}, {"id": 53, "module": "Cross-cutting", "feature": "P1-XCT — Architecture & Sprint Coordination", "task": "Architecture oversight, code reviews, integration governance", "crit": ["code reviews on all merges", "integration governance across engines", "ADRs logged (incl. any declared exception)"], "role": "Tech Lead / Architect", "md": 5, "orig": 13, "team": "shared", "ws": 1, "we": 4, "needs": [], "moved": false, "task_vi": "Giám sát kiến trúc, review code, quản trị tích hợp", "crit_vi": ["Review code cho mọi lần merge", "Quản trị tích hợp giữa các engine", "Ghi ADR (kể cả các ngoại lệ đã công bố)"]}, {"id": 54, "module": "Cross-cutting", "feature": "P1-XCT — Architecture & Sprint Coordination", "task": "Sprint planning, demo coordination, stakeholder reporting & sign-off", "crit": ["sprint planned & committed", "demo coordinated", "stakeholder reporting & sign-off delivered"], "role": "Product Manager", "md": 2, "orig": 9, "team": "shared", "ws": 1, "we": 4, "needs": [], "moved": false, "task_vi": "Lập kế hoạch sprint, điều phối demo, báo cáo các bên liên quan & nghiệm thu", "crit_vi": ["Sprint được lập kế hoạch & cam kết", "Demo được điều phối", "Báo cáo các bên liên quan & biên bản nghiệm thu được bàn giao"]}, {"id": 55, "module": "Perf, Security & Demo", "feature": "D1.14 — Performance, Security & Demo Standards", "task": "10 use-case demo dataset, live demo prep & full regression UAT", "crit": ["ten worked example ventures delivered end-to-end", "an unassisted live demo (account→report→email) succeeds", "full regression UAT recorded"], "role": "QA Engineer", "md": 4, "orig": 4, "team": "shared", "ws": 3, "we": 4, "needs": ["refs"], "moved": false, "task_vi": "Bộ dữ liệu demo 10 use-case, chuẩn bị demo trực tiếp & UAT hồi quy toàn bộ", "crit_vi": ["Mười venture mẫu chạy trọn vẹn end-to-end", "Demo trực tiếp không cần hỗ trợ (tài khoản→báo cáo→email) thành công", "UAT hồi quy toàn bộ được ghi lại"]}];
+/* ---------- language ---------- */
+const KEY='regen-s2-plan-v1';
+let LANG='en';try{const l=localStorage.getItem(KEY+'-lang');if(l==='vi'||l==='en')LANG=l;}catch(e){}
+const L=(en,vi)=>LANG==='vi'?vi:en;
+const I18N={
+ eyebrow:['RegenEngine · Phase 1 · Sprint 2 · MVP','RegenEngine · Giai đoạn 1 · Sprint 2 · MVP'],
+ title:['Sprint 2 Implementation Plan','Kế hoạch triển khai Sprint 2'],
+ sub:['32 approved tasks across two parallel teams (AI Service and App), Mon 2 Nov – Fri 27 Nov 2026. Build in weeks 1–3, feature freeze Fri 20 Nov, stabilise and UAT in week 4. Owners, status and notes are shared: click Save progress and everyone opening this page sees them.',
+      '32 task đã được duyệt, chia cho hai team chạy song song (AI Service và App), từ T2 2/11 đến T6 27/11/2026. Phát triển trong tuần 1–3, khoá tính năng T6 20/11, ổn định và UAT trong tuần 4. Người phụ trách, trạng thái và ghi chú được chia sẻ: bấm Lưu tiến độ để mọi người mở trang đều thấy.'],
+ theme:['◐ Theme','◐ Giao diện'],csv:['Export CSV','Xuất CSV'],load:['⟳ Load progress','⟳ Tải tiến độ'],save:['Save progress','Lưu tiến độ'],ghTip:['GitHub save settings','Cài đặt lưu lên GitHub'],
+ tabPlan:['Week plan','Kế hoạch theo tuần'],tabTasks:['Tasks & status','Task & trạng thái'],tabTeam:['Teams & capacity','Team & năng lực'],tabInputs:['Customer inputs','Đầu vào từ khách hàng'],tabReady:['Before Monday & DoD','Trước thứ Hai & DoD'],
+ ganttHint:['Click a task to see its accept-when criteria. Red line = feature freeze, Fri 20 Nov.','Bấm vào task để xem tiêu chí nghiệm thu. Vạch đỏ = khoá tính năng, T6 20/11.'],
+ inTitle:['Seven customer inputs, all due in week 1','Bảy đầu vào từ khách hàng, đều có hạn trong tuần 1'],
+ inSub:['Owner: PM. Request goes to the customer Fri 30 Oct. No reply in 2 working days → our proposal goes ahead. LLM and API usage costs are borne by the customer.','Phụ trách: PM. Gửi yêu cầu cho khách hàng T6 30/10. Không phản hồi sau 2 ngày làm việc → áp dụng đề xuất của chúng ta. Chi phí LLM và API do khách hàng chi trả.'],
+ bfTitle:['Six things to finish before Mon 2 Nov','Sáu việc cần xong trước T2 2/11'],bfSub:['Each owner confirms at the kickoff.','Từng người phụ trách xác nhận tại buổi kickoff.'],
+ dodTitle:['Definition of Done','Định nghĩa Hoàn thành (DoD)'],dodSub:['A task moves to Done only when all six are true. Devs move it to Ready for QA once it is on staging.','Task chỉ chuyển sang Hoàn thành khi đạt đủ cả sáu điều. Dev chuyển sang Chờ QA khi đã lên staging.'],
+ apiTitle:['API contract between the two teams','API contract giữa hai team'],
+ apiSub:['Schemas signed off by the Tech Lead Wed 4 Nov · mock endpoints with fixture data Fri 6 Nov · App builds on mocks W1–W2 · switch to real APIs Mon 16 Nov.','Tech Lead duyệt schema T4 4/11 · mock endpoint có dữ liệu mẫu T6 6/11 · App làm trên mock trong tuần 1–2 · chuyển sang API thật T2 16/11.'],
+ apiIf:['Interface','Giao tiếp'],apiWhat:['What it carries','Nội dung truyền'],
+ footer:['Prepared by the Digiex team · Sources: RegenEngine Proposal Breakdown v5 Option 2 (Phase 1 sheet, tasks #24–#55) and RegenEngine Sprint 2 Kickoff deck · Generated 29 Oct 2026. Week spans inside each lane are a planning proposal built from the kickoff\'s four-week plan; adjust them with the team leads.',
+         'Thực hiện bởi team Digiex · Nguồn: RegenEngine Proposal Breakdown v5 Option 2 (sheet Phase 1, task #24–#55) và slide RegenEngine Sprint 2 Kickoff · Tạo ngày 29/10/2026. Phân bổ tuần trong từng lane là đề xuất dựa trên kế hoạch bốn tuần của buổi kickoff; điều chỉnh cùng các team lead.']
+};
+const t=k=>L(...I18N[k]);
+const TEAMS={ai:['AI Service','AI Service'],app:['App','App'],shared:['Shared','Dùng chung']};
+const TEAM=k=>L(...TEAMS[k]);
+const ROLE_VI={'AI/ML Engineer':'Kỹ sư AI/ML','Senior Backend Engineer':'Kỹ sư Backend (Senior)','Senior Frontend Engineer':'Kỹ sư Frontend (Senior)','QA Engineer':'Kỹ sư QA','Product Manager':'Product Manager','Tech Lead / Architect':'Tech Lead / Kiến trúc sư'};
+const role=r=>L(r,ROLE_VI[r]||r);
+const roleShort=r=>L(r.replace('Senior ',''),(ROLE_VI[r]||r).replace(' (Senior)',''));
+const tName=x=>L(x.task,x.task_vi);const tCrit=x=>L(x.crit,x.crit_vi);
+const wk=n=>L('W'+n,'T'+n);
+const WEEKS=[
+ {n:1,en:'W1 · 2–6 Nov',vi:'Tuần 1 · 2–6/11',ms:[['Wed 4 · API contract + customer inputs','T4 4/11 · API contract + đầu vào khách hàng'],['Fri 6 · Mock endpoints; SP1 leftovers closed','T6 6/11 · Mock endpoint; đóng việc tồn Sprint 1']]},
+ {n:2,en:'W2 · 9–13 Nov',vi:'Tuần 2 · 9–13/11',ms:[['Mon 9 · Reference ventures, PDF template','T2 9/11 · Venture tham chiếu, mẫu PDF'],['Thu 12 · Demo 1 (30 min)','T5 12/11 · Demo 1 (30 phút)']]},
+ {n:3,en:'W3 · 16–20 Nov',vi:'Tuần 3 · 16–20/11',ms:[['Mon 16 · Switch to real APIs','T2 16/11 · Chuyển sang API thật'],['Thu 19 · Demo 2 end to end','T5 19/11 · Demo 2 end-to-end'],['Fri 20 · Feature freeze','T6 20/11 · Khoá tính năng']]},
+ {n:4,en:'W4 · 23–27 Nov',vi:'Tuần 4 · 23–27/11',ms:[['Mon 23–Wed 25 · UAT & sign-off','T2 23–T4 25/11 · UAT & nghiệm thu'],['Thu 26 · US Thanksgiving','T5 26/11 · Lễ Tạ ơn (Mỹ)']]}];
+const MILESTONES=[
+ ['2026-10-30',['Fri 30 Oct','T6 30/10'],['Teams named, input request sent','Chốt nhân sự, gửi yêu cầu đầu vào']],
+ ['2026-11-02',['Mon 2 Nov','T2 2/11'],['Sprint starts, QA from day one','Bắt đầu sprint, QA từ ngày đầu']],
+ ['2026-11-04',['Wed 4 Nov','T4 4/11'],['API contract + customer decisions','API contract + quyết định của khách hàng']],
+ ['2026-11-06',['Fri 6 Nov','T6 6/11'],['Mock endpoints live','Mock endpoint sẵn sàng']],
+ ['2026-11-12',['Thu 12 Nov','T5 12/11'],['Demo 1','Demo 1']],
+ ['2026-11-16',['Mon 16 Nov','T2 16/11'],['Switch to real APIs','Chuyển sang API thật']],
+ ['2026-11-20',['Fri 20 Nov','T6 20/11'],['Feature freeze · Demo 2 Thu 19','Khoá tính năng · Demo 2 T5 19/11']],
+ ['2026-11-25',['23–25 Nov','23–25/11'],['UAT & sign-off','UAT & nghiệm thu']]];
+const NEEDS={proposal:['AI & Scoring Proposal','Đề xuất AI & Scoring'],llm:['Fixed LLM + API account','LLM cố định + tài khoản API'],dna:['DNA question set','Bộ câu hỏi DNA'],investor:['Investor criteria','Tiêu chí nhà đầu tư'],refs:['10 reference ventures','10 venture tham chiếu'],pdf:['PDF template sign-off','Duyệt mẫu PDF']};
+const need=k=>L(...NEEDS[k]);
+const STATUS=[['todo','Not started','Chưa bắt đầu'],['prog','In progress','Đang làm'],['qa','Ready for QA','Chờ QA'],['done','Done','Hoàn thành'],['blk','Blocked','Bị chặn']];
+const stLabel=k=>{const s=STATUS.find(x=>x[0]===k)||STATUS[0];return L(s[1],s[2]);};
+const INPUTS=[
+ ['proposal',['Approve the AI & Scoring Workflow Proposal','Duyệt Đề xuất quy trình AI & Scoring'],['All AI Service work','Toàn bộ việc của team AI Service'],['Wed 4 Nov','T4 4/11']],
+ ['llm',['Choose the fixed LLM and set up the API account','Chọn LLM cố định và tạo tài khoản API'],['Research, analysis','Nghiên cứu, phân tích'],['Wed 4 Nov','T4 4/11']],
+ ['dna',['Founder DNA question set and scoring dimensions','Bộ câu hỏi Founder DNA và các tiêu chí chấm điểm'],['DNA engine and UI','Engine và UI DNA'],['Wed 4 Nov','T4 4/11']],
+ ['investor',['Investor criteria fields and profile content','Các trường tiêu chí và nội dung hồ sơ nhà đầu tư'],['Investor model, portal','Mô hình nhà đầu tư, cổng nhà đầu tư'],['Wed 4 Nov','T4 4/11']],
+ ['sp1',['Open Sprint 1 decisions and inputs','Các quyết định và đầu vào còn mở của Sprint 1'],['Sprint 1 close-out','Đóng Sprint 1'],['Fri 6 Nov','T6 6/11']],
+ ['refs',['10 reference ventures with expected outcomes','10 venture tham chiếu kèm kết quả mong đợi'],['Calibration, D1.14','Hiệu chỉnh, D1.14'],['Mon 9 Nov','T2 9/11']],
+ ['pdf',['Sign-off on the branded PDF report template','Duyệt mẫu báo cáo PDF theo thương hiệu'],['Report PDF','PDF báo cáo'],['Mon 9 Nov','T2 9/11']]];
+const BEFORE=[
+ [['Name the people in each team','Chốt nhân sự cho từng team'],['Team leads','Team lead'],['Fri 30 Oct','T6 30/10']],
+ [['Send the customer input request','Gửi yêu cầu đầu vào cho khách hàng'],['PM','PM'],['Fri 30 Oct','T6 30/10']],
+ [['Create Sprint 2 Jira epics from the 32 tasks','Tạo epic Jira Sprint 2 từ 32 task'],['PM','PM'],['Fri 30 Oct','T6 30/10']],
+ [['Draft the API contract','Soạn thảo API contract'],['Tech Lead, AI lead','Tech Lead, AI lead'],['Mon 2 Nov','T2 2/11']],
+ [['Test plan and test-case template for Sprint 2','Test plan và mẫu test case cho Sprint 2'],['QA lead','QA lead'],['Mon 2 Nov','T2 2/11']],
+ [['Nightly regression running in CI (946 Sprint 1 cases)','Chạy regression hằng đêm trong CI (946 case Sprint 1)'],['QA, DevOps','QA, DevOps'],['Mon 2 Nov','T2 2/11']]];
+const DOD=[['Code reviewed and merged by the Tech Lead','Code được Tech Lead review và merge'],['Deployed to staging','Đã deploy lên staging'],['Its accept-when test cases pass, signed by QA','Các test case theo tiêu chí nghiệm thu đều pass, QA xác nhận'],['No open Critical or High bugs','Không còn bug Critical hoặc High đang mở'],['AI output meets the evaluation threshold on the reference set','Kết quả AI đạt ngưỡng đánh giá trên bộ tham chiếu'],['Works on the demo accounts and is in the release note','Chạy được trên tài khoản demo và có trong release note']];
+const API=[[['Start assessment','Bắt đầu đánh giá'],['Submitted venture → AI analysis job','Venture đã nộp → job phân tích AI']],[['Job status','Trạng thái job'],['Queued, running, done, failed + progress for the waiting screen','Chờ, đang chạy, xong, lỗi + tiến độ cho màn hình chờ']],[['Scores','Điểm số'],['Category, weighted, composite 0–100, Qualified (≥75, no section <65)','Điểm hạng mục, có trọng số, tổng hợp 0–100, Qualified (≥75, không section nào <65)']],[['Report','Báo cáo'],['Summary and detailed JSON, PDF signed URL','JSON tóm tắt và chi tiết, signed URL của PDF']],[['DNA & Investor','DNA & Nhà đầu tư'],['Answers in → scores, findings with sources and confidence out','Nhận câu trả lời → trả về điểm, phát hiện kèm nguồn và độ tin cậy']]];
+const ROLES={ai:[['AI/ML Engineer',3],['Senior Backend Engineer',1],['QA Engineer',0.5]],app:[['Senior Frontend Engineer',2],['Senior Backend Engineer',1],['QA Engineer',0.5]]};
+
+/* ---------- state ---------- */
+const blank=()=>({tasks:{},inputs:{},before:{},hc:{},u:{},meta:{}});
+const norm=o=>Object.assign(blank(),o||{});
+let S=blank(), dirty=false, pendingDiscard=false, lastSync=['',''];
+try{S=norm(JSON.parse(document.getElementById('progress-data').textContent||'{}'));}catch(e){}
+function touch(key){S.u[key]=Date.now();dirty=true;pendingDiscard=false;sync('dirty',['Unsaved changes — click Save progress so the team can see them.','Có thay đổi chưa lưu — bấm Lưu tiến độ để cả team thấy.']);}
+const ts=id=>S.tasks[id]||(S.tasks[id]={status:'todo',owner:'',note:''});
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=s=>document.querySelector(s);
+
+/* theme */
+try{const th=localStorage.getItem(KEY+'-theme');if(th)document.documentElement.dataset.theme=th;}catch(e){}
+$('#themeBtn').onclick=()=>{const cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const n=cur==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(KEY+'-theme',n)}catch(e){}};
+
+/* tabs */
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.p));
+  try{localStorage.setItem(KEY+'-tab',b.dataset.p)}catch(e){}
+});
+try{const tb=localStorage.getItem(KEY+'-tab');if(tb)document.querySelector(`nav.tabs button[data-p="${tb}"]`)?.click();}catch(e){}
+
+/* static text + filter options */
+function staticText(){
+  document.documentElement.lang=LANG;
+  document.querySelectorAll('[data-i]').forEach(el=>el.textContent=t(el.dataset.i));
+  document.querySelectorAll('[data-it]').forEach(el=>el.title=t(el.dataset.it));
+  document.querySelectorAll('.lang button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===LANG));
+  document.title=t('title');
+  const teamOpts=`<option value="">${L('All teams','Tất cả team')}</option>`+['ai','app','shared'].map(k=>`<option value="${k}">${TEAM(k)}</option>`).join('');
+  for(const id of ['gTeam','fTeam']){const v=$('#'+id).value;$('#'+id).innerHTML=teamOpts;$('#'+id).value=v;}
+  const keep=id=>$('#'+id).value;
+  let v=keep('fFeat');$('#fFeat').innerHTML=`<option value="">${L('All features','Tất cả tính năng')}</option>`+[...new Set(TASKS.map(x=>x.feature))].map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join('');$('#fFeat').value=v;
+  v=keep('fWeek');$('#fWeek').innerHTML=`<option value="">${L('Any target week','Mọi tuần mục tiêu')}</option>`+[1,2,3,4].map(n=>`<option value="${n}">${L('Week ','Tuần ')+n}</option>`).join('');$('#fWeek').value=v;
+  v=keep('fStat');$('#fStat').innerHTML=`<option value="">${L('Any status','Mọi trạng thái')}</option>`+STATUS.map(([k])=>`<option value="${k}">${stLabel(k)}</option>`).join('');$('#fStat').value=v;
+  $('#q').placeholder=L('Search task, feature, role, notes…','Tìm task, tính năng, vai trò, ghi chú…');
+  const cols=[['id','#'],['task','Task'],['team','Team'],['role',L('Role','Vai trò')],['md','MD'],['we',L('Weeks','Tuần')],['',L('Owner','Người phụ trách')],['status',L('Status','Trạng thái')],['',L('Notes','Ghi chú')]];
+  $('#thead').innerHTML=cols.map(([k,l])=>`<th ${k?`data-s="${k}"`:''} ${k==='md'?'style="text-align:right"':''}>${l}</th>`).join('');
+  document.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{const k=th.dataset.s;sortD=sortK===k?-sortD:1;sortK=k;table()});
+}
+document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>{LANG=b.dataset.lang;try{localStorage.setItem(KEY+'-lang',LANG)}catch(e){};all();sync(lastSync[0],lastSync[1]);});
+
+/* ---------- KPIs & timeline ---------- */
+const mdOf=k=>TASKS.filter(x=>x.team===k).reduce((a,x)=>a+x.md,0);
+function kpis(){
+  const tot=TASKS.reduce((a,x)=>a+x.md,0);
+  const done=TASKS.filter(x=>ts(x.id).status==='done');const doneMd=done.reduce((a,x)=>a+x.md,0);
+  const blk=TASKS.filter(x=>ts(x.id).status==='blk').length;const own=TASKS.filter(x=>ts(x.id).owner.trim()).length;
+  const inp=INPUTS.filter(i=>S.inputs[i[0]]).length;const pct=Math.round(doneMd/tot*100);
+  $('#kpis').innerHTML=`
+   <div class="kpi"><b>${TASKS.length}</b><span>${L('tasks · 8 features','task · 8 tính năng')}</span></div>
+   <div class="kpi"><b>${tot}</b><span>${L('man-days','ngày công')} (AI ${mdOf('ai')} · App ${mdOf('app')} · ${TEAM('shared')} ${mdOf('shared')})</span></div>
+   <div class="kpi"><b>${pct}%</b><span>${done.length} ${L('done','hoàn thành')} · ${doneMd} MD</span><div class="bar-prog"><i style="width:${pct}%"></i></div></div>
+   <div class="kpi"><b>${own}/${TASKS.length}</b><span>${L('tasks with a named owner','task đã có người phụ trách')}${blk?` · <span style="color:var(--warn);font-weight:600">${blk} ${L('blocked','bị chặn')}</span>`:''}</span></div>
+   <div class="kpi"><b>${inp}/7</b><span>${L('customer inputs received','đầu vào khách hàng đã nhận')}</span></div>`;
+}
+function timeline(){
+  const now=new Date();let nextSet=false;
+  $('#timeline').innerHTML=MILESTONES.map(([d,lab,txt])=>{
+    const past=new Date(d+'T23:59:00')<now;let cls=past?'past':'';if(!past&&!nextSet){cls='next';nextSet=true;}
+    return `<div class="m ${cls}"><span class="d">${L(...lab)}</span><b>${L(...txt)}</b></div>`}).join('');
+}
+
+/* ---------- Gantt ---------- */
+function gantt(){
+  const f=$('#gTeam').value;
+  let h=`<div class="g-h">Task</div>`+WEEKS.map(w=>`<div class="g-h"><b>${L(w.en,w.vi)}</b>${w.ms.map(m=>`<span class="ms">${L(...m)}</span>`).join('')}</div>`).join('');
+  const lanes=[['ai',L('AI/ML 57 · Backend 16 · QA 10 MD','AI/ML 57 · Backend 16 · QA 10 MD')],['app',L('Frontend 34 · Backend 18.5 · QA 6 MD','Frontend 34 · Backend 18.5 · QA 6 MD')],['shared',L('Tech Lead 5 · PM 2 · D1.14 acceptance 4 MD','Tech Lead 5 · PM 2 · nghiệm thu D1.14 4 MD')]];
+  for(const [k,sub] of lanes){
+    if(f&&f!==k)continue;
+    h+=`<div class="g-lane t-${k}">${TEAM(k)}<small>${sub}</small></div>`;
+    for(const x of TASKS.filter(y=>y.team===k).sort((a,b)=>a.ws-b.ws||a.we-b.we||a.id-b.id)){
+      const s=ts(x.id),st=s.status,left=(x.ws-1)*25,w=(x.we-x.ws+1)*25;
+      h+=`<div class="g-name" data-id="${x.id}" title="${esc(tName(x))}"><span class="dot" style="background:var(--${({todo:'border',prog:'prog',qa:'qa',done:'ok',blk:'blk'})[st]})"></span><span class="id">#${x.id}</span><span class="tn">${esc(tName(x))}</span></div>
+      <div class="g-cells"><div></div><div></div><div></div><div></div><span class="freeze"></span>
+      <span class="g-bar ${k} ${st==='done'?'done':''}" data-id="${x.id}" style="left:calc(${left}% + 4px);width:calc(${w}% - 8px)">${esc(x.feature.split(' — ')[0])} · ${x.md} MD${s.owner?' · '+esc(s.owner):''}</span></div>`;
+    }
+  }
+  $('#gantt').innerHTML=h;
+}
+$('#gTeam').onchange=gantt;
+$('#gantt').addEventListener('click',e=>{const el=e.target.closest('[data-id]');if(el)openTask(+el.dataset.id)});
+
+/* ---------- Table ---------- */
+let sortK='id',sortD=1;
+['q','fTeam','fFeat','fWeek','fStat'].forEach(id=>$('#'+id).addEventListener('input',table));
+function table(){
+  const q=$('#q').value.toLowerCase(),fT=$('#fTeam').value,fF=$('#fFeat').value,fW=$('#fWeek').value,fS=$('#fStat').value;
+  let rows=TASKS.filter(x=>(!fT||x.team===fT)&&(!fF||x.feature===fF)&&(!fW||x.we==fW)&&(!fS||ts(x.id).status===fS)&&
+    (!q||[x.task,x.task_vi,x.feature,x.role,role(x.role),...x.crit,...x.crit_vi,ts(x.id).owner,ts(x.id).note].join(' ').toLowerCase().includes(q)));
+  const val=(x,k)=>k==='status'?ts(x.id).status:k==='task'?tName(x):k==='role'?role(x.role):x[k];
+  rows.sort((a,b)=>{const p=val(a,sortK),r=val(b,sortK);return (p>r?1:p<r?-1:0)*sortD});
+  $('#count').textContent=`${rows.length} ${L('tasks','task')} · ${rows.reduce((a,x)=>a+x.md,0)} MD`;
+  $('#tbody').innerHTML=rows.map(x=>{const s=ts(x.id);return `<tr class="row" data-id="${x.id}">
+   <td class="meta">${x.id}</td>
+   <td><div class="tt">${esc(tName(x))}</div><div class="meta">${esc(x.feature)}</div>
+     <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${x.moved?`<span class="chip moved">${L('Pulled from Sprint 3','Chuyển từ Sprint 3')}</span>`:''}${x.needs.map(n=>`<span class="chip need">${L('Needs: ','Cần: ')}${need(n)}</span>`).join('')}</div>
+     <ol class="crit">${tCrit(x).map(c=>`<li>${esc(c)}</li>`).join('')}</ol>
+     <button class="exp" data-act="exp">${L('Accept-when criteria ▾','Tiêu chí nghiệm thu ▾')}</button></td>
+   <td><span class="chip t-${x.team}">${TEAM(x.team)}</span></td>
+   <td class="meta">${esc(role(x.role))}</td>
+   <td class="num">${x.md}</td>
+   <td class="meta" style="white-space:nowrap">${x.ws===x.we?wk(x.ws):wk(x.ws)+'–'+wk(x.we)}</td>
+   <td><input class="own" type="text" data-act="own" value="${esc(s.owner)}" placeholder="${L('Name by 30 Oct','Điền tên')}"></td>
+   <td><select class="st st-${s.status}" data-act="st">${STATUS.map(([k])=>`<option value="${k}" ${k===s.status?'selected':''}>${stLabel(k)}</option>`).join('')}</select></td>
+   <td><textarea class="tnote" data-act="note" rows="2" placeholder="${L('Blockers, Jira key, decisions…','Vướng mắc, mã Jira, quyết định…')}">${esc(s.note)}</textarea></td></tr>`}).join('');
+}
+$('#tbody').addEventListener('click',e=>{if(e.target.dataset.act==='exp'){const tr=e.target.closest('tr');tr.classList.toggle('open');e.target.textContent=tr.classList.contains('open')?L('Hide criteria ▴','Ẩn tiêu chí ▴'):L('Accept-when criteria ▾','Tiêu chí nghiệm thu ▾');}});
+$('#tbody').addEventListener('input',e=>{if(e.target.dataset.act==='note'){const id=+e.target.closest('tr').dataset.id;ts(id).note=e.target.value;touch('tasks.'+id);}});
+$('#tbody').addEventListener('change',e=>{const a=e.target.dataset.act;if(!a||a==='note')return;const id=+e.target.closest('tr').dataset.id;
+  if(a==='st'){ts(id).status=e.target.value;e.target.className='st st-'+e.target.value;}
+  if(a==='own'){ts(id).owner=e.target.value.trim();}
+  touch('tasks.'+id);kpis();gantt();cap();});
+
+/* ---------- Drawer ---------- */
+function openTask(id){
+  const x=TASKS.find(y=>y.id===id),s=ts(id);
+  $('#dlgBox').innerHTML=`<button class="x" aria-label="Close" onclick="closeDlg()">×</button>
+   <span class="chip t-${x.team}">${TEAM(x.team)}</span> ${x.moved?`<span class="chip moved">${L('Pulled from Sprint 3','Chuyển từ Sprint 3')}</span>`:''}
+   <h3>#${x.id} · ${esc(tName(x))}</h3><div class="meta">${esc(x.feature)} · ${esc(x.module)}</div>
+   <dl><dt>${L('Role','Vai trò')}</dt><dd>${esc(role(x.role))}</dd><dt>${L('Effort','Khối lượng')}</dt><dd>${x.md} MD <span class="meta">(${L('original estimate','ước tính ban đầu')} ${x.orig})</span></dd>
+   <dt>${L('Planned weeks','Tuần dự kiến')}</dt><dd>${WEEKS.filter(w=>w.n>=x.ws&&w.n<=x.we).map(w=>L(w.en,w.vi)).join(' → ')}</dd>
+   <dt>${L('Customer input','Đầu vào khách hàng')}</dt><dd>${x.needs.length?x.needs.map(n=>`<span class="chip need">${need(n)}</span>`).join(' '):`<span class="meta">${L('None','Không')}</span>`}</dd>
+   <dt>${L('Owner','Người phụ trách')}</dt><dd><input type="text" id="dOwn" value="${esc(s.owner)}" placeholder="${L('Name by 30 Oct','Điền tên')}" style="width:100%"></dd>
+   <dt>${L('Status','Trạng thái')}</dt><dd><select id="dSt" class="st st-${s.status}">${STATUS.map(([k])=>`<option value="${k}" ${k===s.status?'selected':''}>${stLabel(k)}</option>`).join('')}</select></dd></dl>
+   <b>${L('Accept when','Tiêu chí nghiệm thu')}</b><ol>${tCrit(x).map(c=>`<li>${esc(c)}</li>`).join('')}</ol>
+   <b>${L('Notes','Ghi chú')}</b><textarea id="dNote" placeholder="${L('Blockers, Jira key, decisions…','Vướng mắc, mã Jira, quyết định…')}">${esc(s.note)}</textarea>`;
+  $('#dlg').classList.add('on');
+  const upd=()=>{s.owner=$('#dOwn').value.trim();s.status=$('#dSt').value;s.note=$('#dNote').value;$('#dSt').className='st st-'+s.status;touch('tasks.'+id);kpis();gantt();table();cap();};
+  ['dOwn','dSt','dNote'].forEach(i=>$('#'+i).addEventListener('change',upd));
+}
+function closeDlg(){$('#dlg').classList.remove('on')}
+$('#dlg').addEventListener('click',e=>{if(e.target.id==='dlg')closeDlg()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDlg()});
+
+/* ---------- Capacity ---------- */
+function load(team,r){const w=[0,0,0,0];for(const x of TASKS.filter(y=>y.team===team&&y.role===r)){const k=x.we-x.ws+1;for(let i=x.ws;i<=x.we;i++)w[i-1]+=x.md/k;}return w;}
+function cap(){
+  const over=[];
+  $('#capGrid').innerHTML=['ai','app'].map(team=>{
+    const rows=ROLES[team].map(([r,def])=>{
+      const hc=S.hc[team+r]??def;const l=load(team,r);const capW=hc*5;const tot=l.reduce((a,b)=>a+b,0);
+      l.forEach((v,i)=>{if(v>capW+0.01)over.push(`${TEAM(team)} ${roleShort(r)} ${wk(i+1)} (${v.toFixed(1)} ${L('vs','so với')} ${capW})`)});
+      return `<tr><td>${roleShort(r)}</td><td><input class="hc" type="number" min="0" step="0.5" value="${hc}" data-k="${team+r}"></td>
+       ${l.map(v=>`<td class="cell ${v>capW+0.01?'over':''}">${v?v.toFixed(1):'–'}</td>`).join('')}<td class="cell"><b>${tot}</b></td></tr>`}).join('');
+    const people=[...new Set(TASKS.filter(x=>x.team===team).map(x=>ts(x.id).owner).filter(Boolean))];
+    return `<div class="card cap"><h3><span class="chip t-${team}">${TEAM(team)}</span> team</h3>
+     <div class="meta">${team==='ai'?L('Research, analysis and scoring engines · report generation & branded PDF · DNA scoring/research · investor AI validation · 15s target · evaluation harness','Engine nghiên cứu, phân tích và chấm điểm · tạo báo cáo & PDF thương hiệu · chấm điểm/nghiên cứu DNA · AI xác thực nhà đầu tư · mục tiêu 15 giây · harness đánh giá'):L('Score charts & report screens · Founder DNA questionnaire & UI · investor criteria model & portal · admin users & ventures, scoring and chart settings','Biểu đồ điểm & màn hình báo cáo · bảng câu hỏi & UI Founder DNA · mô hình tiêu chí & cổng nhà đầu tư · admin quản lý user & venture, cài đặt chấm điểm và biểu đồ')}</div>
+     <table style="margin-top:12px"><thead><tr><th>${L('Role','Vai trò')}</th><th>${L('People','Số người')}</th>${[1,2,3,4].map(n=>`<th class="cell">${wk(n)}</th>`).join('')}<th class="cell">MD</th></tr></thead><tbody>${rows}</tbody></table>
+     <div class="meta" style="margin-top:10px">${L('Cells show planned MD per week; red = more than people × 5 days. Named so far: ','Ô thể hiện số MD dự kiến mỗi tuần; đỏ = vượt số người × 5 ngày. Đã có tên: ')}${people.length?people.map(esc).join(', '):`<i>${L('nobody yet — name owners in the Tasks tab','chưa có — điền người phụ trách ở tab Task')}</i>`}.</div></div>`}).join('')
+   + `<div class="card cap" style="grid-column:1/-1"><h3><span class="chip t-shared">${TEAM('shared')}</span> ${L('across both teams','cho cả hai team')}</h3>
+     <div class="meta">${L('Tech Lead / Architect 5 MD (#53, code review, integration governance, owns the API contract) · Product Manager 2 MD (#54, planning, demos, decision log, weekly report) · QA 4 MD (#55, D1.14 ten-venture acceptance, live demo, full regression UAT). Daily: team standups, cross-team API sync, 15-min bug triage. Critical bugs fixed in 24h, High in 48h.','Tech Lead / Kiến trúc sư 5 MD (#53, review code, quản trị tích hợp, phụ trách API contract) · Product Manager 2 MD (#54, lập kế hoạch, demo, nhật ký quyết định, báo cáo tuần) · QA 4 MD (#55, nghiệm thu D1.14 với 10 venture, demo trực tiếp, UAT hồi quy toàn bộ). Hằng ngày: standup từng team, sync API giữa hai team, phân loại bug 15 phút. Bug Critical sửa trong 24h, High trong 48h.')}</div></div>`;
+  $('#capNote').innerHTML= over.length
+   ? `<b>${L('Over capacity at the current headcount:','Vượt năng lực với số người hiện tại:')}</b> ${over.join(' · ')}. ${L('Building must finish by the Fri 20 Nov freeze, so W4 has no build capacity. Either add people (try the inputs above), pull work across lanes (AI Service backend has slack in W1), or agree with the customer what moves to Sprint 3 — before Mon 2 Nov, as the kickoff risk slide says.','Phát triển phải xong trước mốc khoá tính năng T6 20/11, nên tuần 4 không còn thời gian build. Cần thêm người (thử thay đổi số người ở trên), điều chuyển việc giữa các lane (backend AI Service còn trống ở tuần 1), hoặc thống nhất với khách hàng những gì chuyển sang Sprint 3 — trước T2 2/11, như slide rủi ro của buổi kickoff.')}`
+   : `<b>${L('Fits at the current headcount.','Vừa với số người hiện tại.')}</b> ${L('Every role is within people × 5 days in each week.','Mọi vai trò đều nằm trong số người × 5 ngày mỗi tuần.')}`;
+  document.querySelectorAll('.hc').forEach(i=>i.onchange=()=>{S.hc[i.dataset.k]=+i.value;touch('hc.'+i.dataset.k);cap();});
+}
+
+/* ---------- Checklists ---------- */
+function lists(){
+  $('#inputs').innerHTML=INPUTS.map(([k,a,u,d])=>{const n=TASKS.filter(x=>x.needs.includes(k));
+    return `<label class="it ${S.inputs[k]?'ck':''}"><input type="checkbox" data-g="inputs" data-k="${k}" ${S.inputs[k]?'checked':''}><div><div class="lbl tt">${L(...a)}</div><div class="meta">${L('Unblocks: ','Gỡ chặn cho: ')}${L(...u)}${n.length?` · ${L('tasks','task')} ${n.map(x=>'#'+x.id).join(', ')}`:''}</div></div><span class="due">${L(...d)}</span></label>`}).join('');
+  $('#before').innerHTML=BEFORE.map(([a,o,d],i)=>`<label class="it ${S.before[i]?'ck':''}"><input type="checkbox" data-g="before" data-k="${i}" ${S.before[i]?'checked':''}><div><div class="lbl tt">${L(...a)}</div><div class="meta">${L(...o)}</div></div><span class="due">${L(...d)}</span></label>`).join('');
+  $('#dod').innerHTML=DOD.map((a,i)=>`<div class="it"><span class="chip moved">${i+1}</span><div class="lbl">${L(...a)}</div></div>`).join('');
+  $('#api').innerHTML=API.map(([a,b])=>`<tr><td class="tt">${L(...a)}</td><td>${L(...b)}</td></tr>`).join('');
+}
+document.addEventListener('change',e=>{const g=e.target.dataset.g;if(!g)return;S[g][e.target.dataset.k]=e.target.checked;e.target.closest('.it').classList.toggle('ck',e.target.checked);touch(g+'.'+e.target.dataset.k);kpis();});
+
+/* ---------- CSV ---------- */
+function dl(name,data,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+$('#csvBtn').onclick=()=>{const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const h=L(['#','Team','Module','Feature','Task','Role','MD','Start week','Target week','Owner','Status','Customer input','Accept when','Notes'],['#','Team','Module','Tính năng','Task','Vai trò','MD','Tuần bắt đầu','Tuần mục tiêu','Người phụ trách','Trạng thái','Đầu vào khách hàng','Tiêu chí nghiệm thu','Ghi chú']);
+  const r=TASKS.map(x=>{const s=ts(x.id);return [x.id,TEAM(x.team),x.module,x.feature,tName(x),role(x.role),x.md,wk(x.ws),wk(x.we),s.owner,stLabel(s.status),x.needs.map(need).join('; '),tCrit(x).map((c,i)=>(i+1)+') '+c).join(' '),s.note].map(q).join(',')});
+  dl(`RegenEngine_Sprint2_Tasks_${LANG.toUpperCase()}.csv`,'﻿'+[h.map(q).join(','),...r].join('\n'),'text/csv');};
+
+/* ================= Save / Load (progress stored inside this HTML file) ================= */
+const BLOCK=/(<script id="progress-data" type="application\/json">)([\s\S]*?)(<\/script>)/;
+function sync(cls,msg){lastSync=[cls,msg];const el=$('#sync');el.className='sync '+(cls||'');$('#syncTxt').textContent=typeof msg==='function'?msg():Array.isArray(msg)?L(...msg):msg;}
+function savedLine(){const m=S.meta||{};return m.savedAt?`${L('Saved','Đã lưu')} ${new Date(m.savedAt).toLocaleString(LANG==='vi'?'vi-VN':'en-GB',{dateStyle:'medium',timeStyle:'short'})}${m.savedBy?L(' by ',' bởi ')+m.savedBy:''}`:L('No progress saved yet','Chưa có tiến độ nào được lưu');}
+function b64enc(str){const b=new TextEncoder().encode(str);let s='';for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(s);}
+function b64dec(b){const s=atob(b.replace(/\s/g,''));const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return new TextDecoder().decode(u);}
+function readBlock(html){const m=html.match(BLOCK);if(!m)throw new Error(L('This file has no progress block','Tệp này không có khối tiến độ'));return norm(JSON.parse(m[2].trim()||'{}'));}
+function writeBlock(html,state){const json=JSON.stringify(state).replace(/</g,'\\u003c');if(!BLOCK.test(html))throw new Error(L('This file has no progress block','Tệp này không có khối tiến độ'));return html.replace(BLOCK,(m,a,b,c)=>a+json+c);}
+function getK(st,key){const i=key.indexOf('.');return st[key.slice(0,i)]?.[key.slice(i+1)];}
+function setK(st,key,v){const i=key.indexOf('.'),g=key.slice(0,i);(st[g]=st[g]||{})[key.slice(i+1)]=JSON.parse(JSON.stringify(v));}
+function merge(remote,local){const out=norm(JSON.parse(JSON.stringify(remote)));
+  for(const [k,tm] of Object.entries(local.u||{})){if(tm>(out.u[k]||0)){const v=getK(local,k);if(v!==undefined){setK(out,k,v);out.u[k]=tm;}}}
+  return out;}
+function ghDefaults(){const h=location.hostname,parts=location.pathname.split('/').filter(Boolean);let owner='',repo='',path='';
+  if(h.endsWith('.github.io')){owner=h.split('.')[0];
+    if(parts.length&&!/\.html?$/.test(parts[0])){repo=parts[0];path=parts.slice(1).join('/');}else{repo=h;path=parts.join('/');}
+    if(!path||location.pathname.endsWith('/'))path=(path?path.replace(/\/?$/,'/'):'')+'index.html';}
+  else{path=decodeURIComponent(parts.pop()||'index.html');}
+  return {owner,repo,branch:'main',path,token:'',name:''};}
+function gh(){let c={};try{c=JSON.parse(localStorage.getItem(KEY+'-gh')||'{}')}catch(e){}return Object.assign(ghDefaults(),Object.fromEntries(Object.entries(c).filter(([k,v])=>v!=='')));}
+function setGh(c){try{localStorage.setItem(KEY+'-gh',JSON.stringify(c))}catch(e){}}
+const ghReady=c=>c.owner&&c.repo&&c.path;
+const apiUrl=c=>`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${c.path.split('/').map(encodeURIComponent).join('/')}`;
+async function ghGet(c){const r=await fetch(apiUrl(c)+'?ref='+encodeURIComponent(c.branch)+'&t='+Date.now(),{cache:'no-store',headers:Object.assign({Accept:'application/vnd.github+json'},c.token?{Authorization:'Bearer '+c.token}:{})});
+  if(!r.ok)throw new Error(`${L('GitHub read failed','Đọc từ GitHub thất bại')} (${r.status}${r.status===404?L(': check repo, branch and file path in ⚙',': kiểm tra repo, branch và đường dẫn tệp trong ⚙'):r.status===401?L(': token is invalid',': token không hợp lệ'):''})`);
+  const j=await r.json();return {html:b64dec(j.content),sha:j.sha};}
+async function ghPut(c,html,sha){const r=await fetch(apiUrl(c),{method:'PUT',headers:{Accept:'application/vnd.github+json',Authorization:'Bearer '+c.token,'Content-Type':'application/json'},
+  body:JSON.stringify({message:`Sprint 2 progress update${c.name?' by '+c.name:''}`,content:b64enc(html),sha,branch:c.branch})});
+  if(r.status===409||r.status===422)return 'conflict';
+  if(!r.ok)throw new Error(`${L('GitHub save failed','Lưu lên GitHub thất bại')} (${r.status}${r.status===403||r.status===401?L(': token needs Contents read & write on this repo',': token cần quyền Contents read & write cho repo này'):''})`);return 'ok';}
+let fileHandle=null;
+async function localHandle(){if(fileHandle)return fileHandle;
+  if(!window.showOpenFilePicker)throw new Error(L('Saving into the file needs Chrome or Edge, or GitHub settings in ⚙','Lưu vào tệp cần Chrome hoặc Edge, hoặc cài đặt GitHub trong ⚙'));
+  sync('busy',['Choose this same HTML file so progress can be written into it…','Chọn đúng tệp HTML này để ghi tiến độ vào…']);
+  const [h]=await showOpenFilePicker({types:[{description:'HTML',accept:{'text/html':['.html','.htm']}}]});
+  if((await h.requestPermission({mode:'readwrite'}))!=='granted')throw new Error(L('Write permission was not granted','Chưa được cấp quyền ghi'));
+  return fileHandle=h;}
+async function loadRemote(){const c=gh();
+  if(ghReady(c))return (await ghGet(c)).html;
+  if(fileHandle)return (await fileHandle.getFile()).text();
+  const r=await fetch(location.href.split('#')[0].split('?')[0]+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error(L('Could not reach the server','Không kết nối được máy chủ'));return r.text();}
+async function doLoad(quiet){
+  if(dirty&&!quiet&&!pendingDiscard){pendingDiscard=true;sync('dirty',['You have unsaved changes. Click Load progress again to discard them, or Save progress first.','Bạn có thay đổi chưa lưu. Bấm Tải tiến độ lần nữa để bỏ chúng, hoặc bấm Lưu tiến độ trước.']);return;}
+  sync('busy',['Loading latest progress…','Đang tải tiến độ mới nhất…']);
+  try{const st=readBlock(await loadRemote());
+    if(quiet&&dirty)return;
+    S=st;dirty=false;pendingDiscard=false;all();sync('',()=>savedLine()+(S.meta&&S.meta.savedAt?L(' · up to date',' · đã cập nhật'):''));}
+  catch(e){if(location.protocol==='file:'&&quiet){sync('',()=>savedLine());return;}sync('err',e.message);}
+}
+async function doSave(){
+  const c=gh();sync('busy',['Saving…','Đang lưu…']);
+  try{
+    if(location.protocol!=='file:'&&!(ghReady(c)&&c.token)){openSettings(L('Add a GitHub token to save progress to the server.','Thêm GitHub token để lưu tiến độ lên máy chủ.'));sync('dirty',['GitHub token needed to save — see ⚙','Cần GitHub token để lưu — xem ⚙']);return;}
+    S.meta={savedAt:Date.now(),savedBy:c.name||''};
+    if(ghReady(c)&&c.token){
+      for(let i=0;i<3;i++){const {html,sha}=await ghGet(c);
+        const merged=merge(readBlock(html),S);merged.meta=S.meta;
+        const res=await ghPut(c,writeBlock(html,merged),sha);
+        if(res==='ok'){S=merged;dirty=false;all();sync('',()=>savedLine()+L(' · saved to GitHub (Pages updates in about a minute; Load progress shows it immediately)',' · đã lưu lên GitHub (Pages cập nhật sau khoảng 1 phút; Tải tiến độ sẽ thấy ngay)'));return;}}
+      throw new Error(L('Someone else saved at the same time — click Save progress again','Có người khác lưu cùng lúc — bấm Lưu tiến độ lần nữa'));
+    }
+    const h=await localHandle();const html=await (await h.getFile()).text();
+    const merged=merge(readBlock(html),S);merged.meta=S.meta;
+    const w=await h.createWritable();await w.write(writeBlock(html,merged));await w.close();
+    S=merged;dirty=false;all();sync('',()=>savedLine()+L(' · saved into ',' · đã lưu vào ')+h.name+L(' — commit & push it to publish',' — commit & push để xuất bản'));
+  }catch(e){if(e.name==='AbortError'){sync('dirty',['Save cancelled — changes not saved yet','Đã huỷ lưu — thay đổi chưa được lưu']);return;}sync('err',e.message);}
+}
+function openSettings(msg){const c=gh();
+  $('#dlgBox').innerHTML=`<button class="x" aria-label="Close" onclick="closeDlg()">×</button><h3>${L('Save to GitHub','Lưu lên GitHub')}</h3>
+   <p class="meta">${msg?esc(msg)+' ':''}${L('Progress is written into this HTML file in your repo, so everyone opening the GitHub Pages link sees it. Viewers only need this if they want to save; anyone can Load.','Tiến độ được ghi vào chính tệp HTML này trong repo, nên ai mở link GitHub Pages cũng thấy. Người chỉ xem không cần cài đặt; ai cũng có thể Tải tiến độ.')}</p>
+   <label class="fld">${L('Repository owner','Chủ repo (owner)')}<input id="gO" value="${esc(c.owner)}" placeholder="digiex-team"></label>
+   <label class="fld">${L('Repository name','Tên repo')}<input id="gR" value="${esc(c.repo)}" placeholder="regenengine-sprint2"></label>
+   <label class="fld">Branch<input id="gB" value="${esc(c.branch)}"><small>${L('The branch GitHub Pages publishes from.','Branch mà GitHub Pages dùng để xuất bản.')}</small></label>
+   <label class="fld">${L('File path in the repo','Đường dẫn tệp trong repo')}<input id="gP" value="${esc(c.path)}"><small>${L('Path of this HTML file, e.g. index.html or docs/sprint2.html','Đường dẫn của tệp HTML này, ví dụ index.html hoặc docs/sprint2.html')}</small></label>
+   <label class="fld">${L('Your name','Tên của bạn')}<input id="gN" value="${esc(c.name)}" placeholder="${L('Shown as “Saved by …”','Hiển thị “Đã lưu bởi …”')}"></label>
+   <label class="fld">GitHub token<input id="gT" type="password" value="${esc(c.token)}" placeholder="github_pat_…"><small>${L('Fine-grained personal access token limited to this repository with <b>Contents: Read and write</b>. Stored only in this browser, never in the file.','Fine-grained personal access token chỉ cho repo này, quyền <b>Contents: Read and write</b>. Chỉ lưu trong trình duyệt này, không bao giờ ghi vào tệp.')}</small></label>
+   <div style="display:flex;gap:8px"><button class="btn pri" id="gSave">${L('Save settings','Lưu cài đặt')}</button><button class="btn" id="gClear">${L('Forget token','Xoá token')}</button></div>`;
+  $('#dlg').classList.add('on');
+  $('#gSave').onclick=()=>{setGh({owner:$('#gO').value.trim(),repo:$('#gR').value.trim(),branch:$('#gB').value.trim()||'main',path:$('#gP').value.trim().replace(/^\//,''),name:$('#gN').value.trim(),token:$('#gT').value.trim()});closeDlg();
+    sync(dirty?'dirty':'',dirty?['Settings saved — click Save progress','Đã lưu cài đặt — bấm Lưu tiến độ']:()=>L('Settings saved · ','Đã lưu cài đặt · ')+savedLine());};
+  $('#gClear').onclick=()=>{const k=gh();k.token='';setGh(k);$('#gT').value='';};
+}
+$('#saveBtn').onclick=doSave;
+$('#loadBtn').onclick=()=>doLoad(false);
+$('#ghBtn').onclick=()=>openSettings();
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+
+function all(){staticText();kpis();timeline();gantt();table();cap();lists();}
+all();
+sync('',()=>savedLine());
+doLoad(true);
+</script>
+</body>
+</html>
