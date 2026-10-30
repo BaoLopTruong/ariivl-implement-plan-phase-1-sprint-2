@@ -161,6 +161,7 @@ textarea{width:100%;min-height:80px;font:13px Inter,sans-serif;color:var(--fg);b
     <div class="lang" role="group" aria-label="Language"><button data-lang="en">EN</button><button data-lang="vi">VI</button></div>
     <button class="btn" id="themeBtn" data-i="theme"></button>
     <button class="btn" id="csvBtn" data-i="csv"></button>
+    <button class="btn" id="htmlBtn" data-i="html"></button>
     <button class="btn" id="loadBtn" data-i="load"></button>
     <button class="btn pri" id="saveBtn" data-i="save"></button>
     <button class="btn" id="ghBtn" data-it="ghTip">⚙</button>
@@ -245,7 +246,7 @@ const I18N={
  title:['Sprint 2 Implementation Plan','Kế hoạch triển khai Sprint 2'],
  sub:['32 approved tasks across two parallel teams (AI Service and App), Mon 2 Nov – Fri 27 Nov 2026. Build in weeks 1–3, feature freeze Fri 20 Nov, stabilise and UAT in week 4. Owners, status and notes are shared: click Save progress and everyone opening this page sees them.',
       '32 task đã được duyệt, chia cho hai team chạy song song (AI Service và App), từ T2 2/11 đến T6 27/11/2026. Phát triển trong tuần 1–3, khoá tính năng T6 20/11, ổn định và UAT trong tuần 4. Người phụ trách, trạng thái và ghi chú được chia sẻ: bấm Lưu tiến độ để mọi người mở trang đều thấy.'],
- theme:['◐ Theme','◐ Giao diện'],csv:['Export CSV','Xuất CSV'],load:['⟳ Load progress','⟳ Tải tiến độ'],save:['Save progress','Lưu tiến độ'],ghTip:['GitHub save settings','Cài đặt lưu lên GitHub'],
+ theme:['◐ Theme','◐ Giao diện'],csv:['Export CSV','Xuất CSV'],html:['Export HTML','Xuất HTML'],load:['⟳ Load progress','⟳ Tải tiến độ'],save:['Save progress','Lưu tiến độ'],ghTip:['GitHub save settings','Cài đặt lưu lên GitHub'],
  tabPlan:['Week plan','Kế hoạch theo tuần'],tabTasks:['Tasks & status','Task & trạng thái'],tabTeam:['Teams & capacity','Team & năng lực'],tabInputs:['Customer inputs','Đầu vào từ khách hàng'],tabReady:['Before Monday & DoD','Trước thứ Hai & DoD'],
  ganttHint:['Click a task to see its accept-when criteria. Red line = feature freeze, Fri 20 Nov.','Bấm vào task để xem tiêu chí nghiệm thu. Vạch đỏ = khoá tính năng, T6 20/11.'],
  inTitle:['Seven customer inputs, all due in week 1','Bảy đầu vào từ khách hàng, đều có hạn trong tuần 1'],
@@ -477,6 +478,25 @@ $('#csvBtn').onclick=()=>{const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const h=L(['#','Team','Module','Feature','Task','Role','MD','Start week','Target week','Owner','Status','Customer input','Accept when','Notes'],['#','Team','Module','Tính năng','Task','Vai trò','MD','Tuần bắt đầu','Tuần mục tiêu','Người phụ trách','Trạng thái','Đầu vào khách hàng','Tiêu chí nghiệm thu','Ghi chú']);
   const r=TASKS.map(x=>{const s=ts(x.id);return [x.id,TEAM(x.team),x.module,x.feature,tName(x),role(x.role),x.md,wk(x.ws),wk(x.we),s.owner,stLabel(s.status),x.needs.map(need).join('; '),tCrit(x).map((c,i)=>(i+1)+') '+c).join(' '),s.note].map(q).join(',')});
   dl(`RegenEngine_Sprint2_Tasks_${LANG.toUpperCase()}.csv`,'﻿'+[h.map(q).join(','),...r].join('\n'),'text/csv');};
+async function sourceHtml(){
+  if(location.protocol!=='file:'){
+    const r=await fetch(location.href.split('#')[0].split('?')[0]+'?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw new Error(L('Could not read this page to export HTML','Không đọc được trang này để xuất HTML'));
+    return r.text();}
+  if(fileHandle)return (await fileHandle.getFile()).text();
+  if(window.showOpenFilePicker){
+    sync('busy',['Choose this HTML file to export a copy with the current progress…','Chọn tệp HTML này để xuất bản sao kèm tiến độ hiện tại…']);
+    const [h]=await showOpenFilePicker({types:[{description:'HTML',accept:{'text/html':['.html','.htm']}}]});
+    return (await h.getFile()).text();}
+  throw new Error(L('Open this page from the site link to export HTML','Mở trang từ link site để xuất HTML'));}
+$('#htmlBtn').onclick=async()=>{
+  sync('busy',['Preparing the HTML file…','Đang tạo tệp HTML…']);
+  try{
+    const out=writeBlock(await sourceHtml(),JSON.parse(JSON.stringify(S)));
+    const d=new Date(),p=n=>String(n).padStart(2,'0');
+    dl(`RegenEngine_Sprint2_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}.html`,out,'text/html;charset=utf-8');
+    sync(dirty?'dirty':'',dirty?['HTML file downloaded. Save progress to publish these changes.','Đã tải tệp HTML. Bấm Lưu tiến độ để xuất bản các thay đổi này.']:()=>savedLine());
+  }catch(e){if(e.name==='AbortError'){sync(dirty?'dirty':'',dirty?['Export cancelled','Đã huỷ xuất']:()=>savedLine());return;}sync('err',e.message);}};
 
 /* ================= Save / Load (progress stored inside this HTML file) ================= */
 const BLOCK=/(<script id="progress-data" type="application\/json">)([\s\S]*?)(<\/script>)/;
