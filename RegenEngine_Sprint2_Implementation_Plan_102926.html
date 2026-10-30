@@ -101,6 +101,7 @@ input.own{height:30px;width:140px}
 .cell{font-variant-numeric:tabular-nums;text-align:center;border-radius:6px}
 .over{background:var(--warn-bg);color:var(--warn);font-weight:700}
 .hc{width:56px;height:28px}
+input.md{width:72px;height:30px;text-align:right}
 .note{background:var(--gold);color:var(--amber-t);border-radius:10px;padding:12px 14px;font-size:13px;margin-top:14px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .list{padding:6px 0}
@@ -305,7 +306,8 @@ const BEFORE=[
  [['Nightly regression running in CI (946 Sprint 1 cases)','Chạy regression hằng đêm trong CI (946 case Sprint 1)'],['QA, DevOps','QA, DevOps'],['Mon 2 Nov','T2 2/11']]];
 const DOD=[['Code reviewed and merged by the Tech Lead','Code được Tech Lead review và merge'],['Deployed to staging','Đã deploy lên staging'],['Its accept-when test cases pass, signed by QA','Các test case theo tiêu chí nghiệm thu đều pass, QA xác nhận'],['No open Critical or High bugs','Không còn bug Critical hoặc High đang mở'],['AI output meets the evaluation threshold on the reference set','Kết quả AI đạt ngưỡng đánh giá trên bộ tham chiếu'],['Works on the demo accounts and is in the release note','Chạy được trên tài khoản demo và có trong release note']];
 const API=[[['Start assessment','Bắt đầu đánh giá'],['Submitted venture → AI analysis job','Venture đã nộp → job phân tích AI']],[['Job status','Trạng thái job'],['Queued, running, done, failed + progress for the waiting screen','Chờ, đang chạy, xong, lỗi + tiến độ cho màn hình chờ']],[['Scores','Điểm số'],['Category, weighted, composite 0–100, Qualified (≥75, no section <65)','Điểm hạng mục, có trọng số, tổng hợp 0–100, Qualified (≥75, không section nào <65)']],[['Report','Báo cáo'],['Summary and detailed JSON, PDF signed URL','JSON tóm tắt và chi tiết, signed URL của PDF']],[['DNA & Investor','DNA & Nhà đầu tư'],['Answers in → scores, findings with sources and confidence out','Nhận câu trả lời → trả về điểm, phát hiện kèm nguồn và độ tin cậy']]];
-const ROLES={ai:[['AI/ML Engineer',3],['Senior Backend Engineer',1],['QA Engineer',0.5]],app:[['Senior Frontend Engineer',2],['Senior Backend Engineer',1],['QA Engineer',0.5]]};
+const ROLES={ai:[['AI/ML Engineer',3],['Senior Backend Engineer',1]],app:[['Senior Frontend Engineer',2],['Senior Backend Engineer',1]]};
+const QC_PEOPLE=2.5;
 
 /* ---------- state ---------- */
 const blank=()=>({tasks:{},inputs:{},before:{},hc:{},u:{},meta:{}});
@@ -314,6 +316,7 @@ let S=blank(), dirty=false, pendingDiscard=false, lastSync=['',''];
 try{S=norm(JSON.parse(document.getElementById('progress-data').textContent||'{}'));}catch(e){}
 function touch(key){S.u[key]=Date.now();dirty=true;pendingDiscard=false;sync('dirty',['Unsaved changes — click Save progress so the team can see them.','Có thay đổi chưa lưu — bấm Lưu tiến độ để cả team thấy.']);}
 const ts=id=>S.tasks[id]||(S.tasks[id]={status:'todo',owner:'',note:''});
+function effort(x){const s=S.tasks[x.id];if(s&&s.md!==undefined&&s.md!==''){const n=+s.md;if(Number.isFinite(n))return n;}return +x.md||0;}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $=s=>document.querySelector(s);
 
@@ -351,12 +354,12 @@ function staticText(){
 document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>{LANG=b.dataset.lang;try{localStorage.setItem(KEY+'-lang',LANG)}catch(e){};all();sync(lastSync[0],lastSync[1]);});
 
 /* ---------- KPIs & timeline ---------- */
-const mdOf=k=>TASKS.filter(x=>x.team===k).reduce((a,x)=>a+x.md,0);
+const mdOf=k=>TASKS.filter(x=>x.team===k).reduce((a,x)=>a+effort(x),0);
 function kpis(){
-  const tot=TASKS.reduce((a,x)=>a+x.md,0);
-  const done=TASKS.filter(x=>ts(x.id).status==='done');const doneMd=done.reduce((a,x)=>a+x.md,0);
+  const tot=TASKS.reduce((a,x)=>a+effort(x),0);
+  const done=TASKS.filter(x=>ts(x.id).status==='done');const doneMd=done.reduce((a,x)=>a+effort(x),0);
   const blk=TASKS.filter(x=>ts(x.id).status==='blk').length;const own=TASKS.filter(x=>ts(x.id).owner.trim()).length;
-  const inp=INPUTS.filter(i=>S.inputs[i[0]]).length;const pct=Math.round(doneMd/tot*100);
+  const inp=INPUTS.filter(i=>S.inputs[i[0]]).length;const pct=tot?Math.round(doneMd/tot*100):0;
   $('#kpis').innerHTML=`
    <div class="kpi"><b>${TASKS.filter(x=>!x.qc).length}</b><span>${L('tasks · 8 features','task · 8 tính năng')} + ${TASKS.filter(x=>x.qc).length} ${L('W1 QC items','việc QC tuần 1')}</span></div>
    <div class="kpi"><b>${tot}</b><span>${L('man-days','ngày công')} (AI ${mdOf('ai')} · App ${mdOf('app')} · ${TEAM('shared')} ${mdOf('shared')})</span></div>
@@ -375,7 +378,7 @@ function timeline(){
 function gantt(){
   const f=$('#gTeam').value;
   let h=`<div class="g-h">Task</div>`+WEEKS.map(w=>`<div class="g-h"><b>${L(w.en,w.vi)}</b>${w.ms.map(m=>`<span class="ms">${L(...m)}</span>`).join('')}</div>`).join('');
-  const lanes=[['ai',L('AI/ML 57 · Backend 16 · QA 10 MD','AI/ML 57 · Backend 16 · QA 10 MD')],['app',L('Frontend 34 · Backend 18.5 · QA 6 MD','Frontend 34 · Backend 18.5 · QA 6 MD')],['shared',L('Tech Lead 5 · PM 2 · D1.14 acceptance 4 MD · W1 QC plan','Tech Lead 5 · PM 2 · nghiệm thu D1.14 4 MD · kế hoạch QC tuần 1')]];
+  const lanes=[['ai',L('AI/ML 57 · Backend 16 · QA 10 MD','AI/ML 57 · Backend 16 · QA 10 MD')],['app',L('Frontend 34 · Backend 18.5 · QA 6 MD','Frontend 34 · Backend 18.5 · QA 6 MD')],['shared',L('Tech Lead 5 · PM 2 · D1.14 acceptance 4 MD · QC 2 full-time + 1 part-time','Tech Lead 5 · PM 2 · nghiệm thu D1.14 4 MD · QC 2 full-time + 1 part-time')]];
   for(const [k,sub] of lanes){
     if(f&&f!==k)continue;
     h+=`<div class="g-lane t-${k}">${TEAM(k)}<small>${sub}</small></div>`;
@@ -383,7 +386,7 @@ function gantt(){
       const s=ts(x.id),st=s.status,left=(x.ws-1)*25,w=(x.we-x.ws+1)*25;
       h+=`<div class="g-name" data-id="${x.id}" title="${esc(tName(x))}"><span class="dot" style="background:var(--${({todo:'border',prog:'prog',qa:'qa',done:'ok',blk:'blk'})[st]})"></span><span class="id">${lab(x)}</span><span class="tn">${esc(tName(x))}</span></div>
       <div class="g-cells"><div></div><div></div><div></div><div></div><span class="freeze"></span>
-      <span class="g-bar ${k} ${st==='done'?'done':''}" data-id="${x.id}" style="left:calc(${left}% + 4px);width:calc(${w}% - 8px)">${esc(x.feature.split(' — ')[0])}${x.qc?'':' · '+x.md+' MD'}${s.owner?' · '+esc(s.owner):''}</span></div>`;
+      <span class="g-bar ${k} ${st==='done'?'done':''}" data-id="${x.id}" style="left:calc(${left}% + 4px);width:calc(${w}% - 8px)">${esc(x.feature.split(' — ')[0])} · ${effort(x)} MD${s.owner?' · '+esc(s.owner):''}</span></div>`;
     }
   }
   $('#gantt').innerHTML=h;
@@ -398,9 +401,9 @@ function table(){
   const q=$('#q').value.toLowerCase(),fT=$('#fTeam').value,fF=$('#fFeat').value,fW=+$('#fWeek').value,fR=$('#fRole').value,fS=$('#fStat').value;
   let rows=TASKS.filter(x=>(!fT||x.team===fT)&&(!fF||x.feature===fF)&&(!fW||(x.ws<=fW&&fW<=x.we))&&(!fR||x.role===fR)&&(!fS||ts(x.id).status===fS)&&
     (!q||[x.task,x.task_vi,x.feature,x.role,role(x.role),...x.crit,...x.crit_vi,ts(x.id).owner,ts(x.id).note].join(' ').toLowerCase().includes(q)));
-  const val=(x,k)=>k==='status'?ts(x.id).status:k==='task'?tName(x):k==='role'?role(x.role):x[k];
+  const val=(x,k)=>k==='status'?ts(x.id).status:k==='md'?effort(x):k==='task'?tName(x):k==='role'?role(x.role):x[k];
   rows.sort((a,b)=>{const p=val(a,sortK),r=val(b,sortK);return (p>r?1:p<r?-1:0)*sortD});
-  $('#count').textContent=`${rows.length} ${L('tasks','task')} · ${rows.reduce((a,x)=>a+x.md,0)} MD`;
+  $('#count').textContent=`${rows.length} ${L('tasks','task')} · ${rows.reduce((a,x)=>a+effort(x),0)} MD`;
   $('#tbody').innerHTML=rows.map(x=>{const s=ts(x.id);return `<tr class="row" data-id="${x.id}">
    <td class="meta">${lab(x)}</td>
    <td><div class="tt">${esc(tName(x))}</div><div class="meta">${esc(x.feature)}</div>
@@ -409,7 +412,7 @@ function table(){
      <button class="exp" data-act="exp">${L('Accept-when criteria ▾','Tiêu chí nghiệm thu ▾')}</button></td>
    <td><span class="chip t-${x.team}">${TEAM(x.team)}</span></td>
    <td class="meta">${esc(role(x.role))}</td>
-   <td class="num">${x.qc?'—':x.md}</td>
+   <td class="num"><input class="md" type="number" min="0" step="0.5" data-act="md" value="${effort(x)}"></td>
    <td class="meta" style="white-space:nowrap">${x.ws===x.we?wk(x.ws):wk(x.ws)+'–'+wk(x.we)}</td>
    <td><input class="own" type="text" data-act="own" value="${esc(s.owner)}" placeholder="${L('Name by 30 Oct','Điền tên')}"></td>
    <td><select class="st st-${s.status}" data-act="st">${STATUS.map(([k])=>`<option value="${k}" ${k===s.status?'selected':''}>${stLabel(k)}</option>`).join('')}</select></td>
@@ -420,7 +423,8 @@ $('#tbody').addEventListener('input',e=>{if(e.target.dataset.act==='note'){const
 $('#tbody').addEventListener('change',e=>{const a=e.target.dataset.act;if(!a||a==='note')return;const id=+e.target.closest('tr').dataset.id;
   if(a==='st'){ts(id).status=e.target.value;e.target.className='st st-'+e.target.value;}
   if(a==='own'){ts(id).owner=e.target.value.trim();}
-  touch('tasks.'+id);kpis();gantt();cap();});
+  if(a==='md'){const n=+e.target.value;ts(id).md=e.target.value!==''&&Number.isFinite(n)?n:0;}
+  touch('tasks.'+id);kpis();gantt();table();cap();});
 
 /* ---------- Drawer ---------- */
 function openTask(id){
@@ -428,7 +432,7 @@ function openTask(id){
   $('#dlgBox').innerHTML=`<button class="x" aria-label="Close" onclick="closeDlg()">×</button>
    <span class="chip t-${x.team}">${TEAM(x.team)}</span> ${x.moved?`<span class="chip moved">${L('Pulled from Sprint 3','Chuyển từ Sprint 3')}</span>`:''}
    <h3>${lab(x)} · ${esc(tName(x))}</h3><div class="meta">${esc(x.feature)} · ${esc(x.module)}</div>
-   <dl><dt>${L('Role','Vai trò')}</dt><dd>${esc(role(x.role))}</dd><dt>${L('Effort','Khối lượng')}</dt><dd>${x.qc?L('Included in the QA test-suite tasks (#32, #36, #42, #48, #52, #55); no extra MD','Nằm trong các task test của QA (#32, #36, #42, #48, #52, #55); không phát sinh thêm MD'):`${x.md} MD <span class="meta">(${L('original estimate','ước tính ban đầu')} ${x.orig})</span>`}</dd>
+   <dl><dt>${L('Role','Vai trò')}</dt><dd>${esc(role(x.role))}</dd><dt>${L('Effort','Khối lượng')}</dt><dd><input class="md" type="number" min="0" step="0.5" id="dMd" value="${effort(x)}"> MD <span class="meta">(${L('original estimate','ước tính ban đầu')} ${x.orig})</span></dd>
    <dt>${L('Planned weeks','Tuần dự kiến')}</dt><dd>${WEEKS.filter(w=>w.n>=x.ws&&w.n<=x.we).map(w=>L(w.en,w.vi)).join(' → ')}</dd>
    <dt>${L('Customer input','Đầu vào khách hàng')}</dt><dd>${x.needs.length?x.needs.map(n=>`<span class="chip need">${need(n)}</span>`).join(' '):`<span class="meta">${L('None','Không')}</span>`}</dd>
    <dt>${L('Owner','Người phụ trách')}</dt><dd><input type="text" id="dOwn" value="${esc(s.owner)}" placeholder="${L('Name by 30 Oct','Điền tên')}" style="width:100%"></dd>
@@ -436,17 +440,21 @@ function openTask(id){
    <b>${L('Accept when','Tiêu chí nghiệm thu')}</b><ol>${tCrit(x).map(c=>`<li>${esc(c)}</li>`).join('')}</ol>
    <b>${L('Notes','Ghi chú')}</b><textarea id="dNote" placeholder="${L('Blockers, Jira key, decisions…','Vướng mắc, mã Jira, quyết định…')}">${esc(s.note)}</textarea>`;
   $('#dlg').classList.add('on');
-  const upd=()=>{s.owner=$('#dOwn').value.trim();s.status=$('#dSt').value;s.note=$('#dNote').value;$('#dSt').className='st st-'+s.status;touch('tasks.'+id);kpis();gantt();table();cap();};
-  ['dOwn','dSt','dNote'].forEach(i=>$('#'+i).addEventListener('change',upd));
+  const upd=()=>{s.owner=$('#dOwn').value.trim();s.status=$('#dSt').value;s.note=$('#dNote').value;const n=+$('#dMd').value;s.md=$('#dMd').value!==''&&Number.isFinite(n)?n:0;$('#dSt').className='st st-'+s.status;touch('tasks.'+id);kpis();gantt();table();cap();};
+  ['dOwn','dSt','dNote','dMd'].forEach(i=>$('#'+i).addEventListener('change',upd));
 }
 function closeDlg(){$('#dlg').classList.remove('on')}
 $('#dlg').addEventListener('click',e=>{if(e.target.id==='dlg')closeDlg()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDlg()});
 
 /* ---------- Capacity ---------- */
-function load(team,r){const w=[0,0,0,0];for(const x of TASKS.filter(y=>y.team===team&&y.role===r)){const k=x.we-x.ws+1;for(let i=x.ws;i<=x.we;i++)w[i-1]+=x.md/k;}return w;}
+function load(team,r){const w=[0,0,0,0];for(const x of TASKS.filter(y=>y.team===team&&y.role===r)){const k=x.we-x.ws+1,md=effort(x);for(let i=x.ws;i<=x.we;i++)w[i-1]+=md/k;}return w;}
+function qaWeeks(){const w=[0,0,0,0];for(const x of TASKS.filter(y=>y.role==='QA Engineer')){const k=x.we-x.ws+1,md=effort(x);for(let i=x.ws;i<=x.we;i++)w[i-1]+=md/k;}return w;}
 function cap(){
   const over=[];
+  const qcHc=S.hc.qc??QC_PEOPLE,qa=qaWeeks(),qcCap=qcHc*5,qaTot=qa.reduce((a,b)=>a+b,0);
+  qa.forEach((v,i)=>{if(v>qcCap+0.01)over.push(`QC ${wk(i+1)} (${v.toFixed(1)} ${L('vs','so với')} ${qcCap})`)});
+  const qcRow=`<tr><td>${roleShort('QA Engineer')}</td><td><input class="hc" type="number" min="0" step="0.5" value="${qcHc}" data-k="qc"></td>${qa.map(v=>`<td class="cell ${v>qcCap+0.01?'over':''}">${v?v.toFixed(1):'–'}</td>`).join('')}<td class="cell"><b>${+qaTot.toFixed(1)}</b></td></tr>`;
   $('#capGrid').innerHTML=['ai','app'].map(team=>{
     const rows=ROLES[team].map(([r,def])=>{
       const hc=S.hc[team+r]??def;const l=load(team,r);const capW=hc*5;const tot=l.reduce((a,b)=>a+b,0);
@@ -459,7 +467,9 @@ function cap(){
      <table style="margin-top:12px"><thead><tr><th>${L('Role','Vai trò')}</th><th>${L('People','Số người')}</th>${[1,2,3,4].map(n=>`<th class="cell">${wk(n)}</th>`).join('')}<th class="cell">MD</th></tr></thead><tbody>${rows}</tbody></table>
      <div class="meta" style="margin-top:10px">${L('Cells show planned MD per week; red = more than people × 5 days. Named so far: ','Ô thể hiện số MD dự kiến mỗi tuần; đỏ = vượt số người × 5 ngày. Đã có tên: ')}${people.length?people.map(esc).join(', '):`<i>${L('nobody yet — name owners in the Tasks tab','chưa có — điền người phụ trách ở tab Task')}</i>`}.</div></div>`}).join('')
    + `<div class="card cap" style="grid-column:1/-1"><h3><span class="chip t-shared">${TEAM('shared')}</span> ${L('across both teams','cho cả hai team')}</h3>
-     <div class="meta">${L('Tech Lead / Architect 5 MD (#53, code review, integration governance, owns the API contract) · Product Manager 2 MD (#54, planning, demos, decision log, weekly report) · QA 4 MD (#55, D1.14 ten-venture acceptance, live demo, full regression UAT). Daily: team standups, cross-team API sync, 15-min bug triage. Critical bugs fixed in 24h, High in 48h.','Tech Lead / Kiến trúc sư 5 MD (#53, review code, quản trị tích hợp, phụ trách API contract) · Product Manager 2 MD (#54, lập kế hoạch, demo, nhật ký quyết định, báo cáo tuần) · QA 4 MD (#55, nghiệm thu D1.14 với 10 venture, demo trực tiếp, UAT hồi quy toàn bộ). Hằng ngày: standup từng team, sync API giữa hai team, phân loại bug 15 phút. Bug Critical sửa trong 24h, High trong 48h.')}</div></div>`;
+     <div class="meta">${L('QC staffing: 2 full-time members and 1 part-time member. Weekly capacity is people × 5 days (2.5 people = 12.5 MD).','Nhân sự QC: 2 thành viên full-time và 1 thành viên part-time. Năng lực mỗi tuần = số người × 5 ngày (2.5 người = 12.5 MD).')}</div>
+     <table style="margin-top:12px"><thead><tr><th>${L('Role','Vai trò')}</th><th>${L('People','Số người')}</th>${[1,2,3,4].map(n=>`<th class="cell">${wk(n)}</th>`).join('')}<th class="cell">MD</th></tr></thead><tbody>${qcRow}</tbody></table>
+     <div class="meta" style="margin-top:10px">${L('Tech Lead / Architect 5 MD (#53, code review, integration governance, owns the API contract) · Product Manager 2 MD (#54, planning, demos, decision log, weekly report) · QA 4 MD (#55, D1.14 ten-venture acceptance, live demo, full regression UAT). Daily: team standups, cross-team API sync, 15-min bug triage. Critical bugs fixed in 24h, High in 48h.','Tech Lead / Kiến trúc sư 5 MD (#53, review code, quản trị tích hợp, phụ trách API contract) · Product Manager 2 MD (#54, lập kế hoạch, demo, nhật ký quyết định, báo cáo tuần) · QA 4 MD (#55, nghiệm thu D1.14 với 10 venture, demo trực tiếp, UAT hồi quy toàn bộ). Hằng ngày: standup từng team, sync API giữa hai team, phân loại bug 15 phút. Bug Critical sửa trong 24h, High trong 48h.')}</div></div>`;
   $('#capNote').innerHTML= over.length
    ? `<b>${L('Over capacity at the current headcount:','Vượt năng lực với số người hiện tại:')}</b> ${over.join(' · ')}. ${L('Building must finish by the Fri 20 Nov freeze, so W4 has no build capacity. Either add people (try the inputs above), pull work across lanes (AI Service backend has slack in W1), or agree with the customer what moves to Sprint 3 — before Mon 2 Nov, as the kickoff risk slide says.','Phát triển phải xong trước mốc khoá tính năng T6 20/11, nên tuần 4 không còn thời gian build. Cần thêm người (thử thay đổi số người ở trên), điều chuyển việc giữa các lane (backend AI Service còn trống ở tuần 1), hoặc thống nhất với khách hàng những gì chuyển sang Sprint 3 — trước T2 2/11, như slide rủi ro của buổi kickoff.')}`
    : `<b>${L('Fits at the current headcount.','Vừa với số người hiện tại.')}</b> ${L('Every role is within people × 5 days in each week.','Mọi vai trò đều nằm trong số người × 5 ngày mỗi tuần.')}`;
@@ -480,7 +490,7 @@ document.addEventListener('change',e=>{const g=e.target.dataset.g;if(!g)return;S
 function dl(name,data,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 $('#csvBtn').onclick=()=>{const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const h=L(['#','Team','Module','Feature','Task','Role','MD','Start week','Target week','Owner','Status','Customer input','Accept when','Notes'],['#','Team','Module','Tính năng','Task','Vai trò','MD','Tuần bắt đầu','Tuần mục tiêu','Người phụ trách','Trạng thái','Đầu vào khách hàng','Tiêu chí nghiệm thu','Ghi chú']);
-  const r=TASKS.map(x=>{const s=ts(x.id);return [lab(x),TEAM(x.team),x.module,x.feature,tName(x),role(x.role),x.qc?'':x.md,wk(x.ws),wk(x.we),s.owner,stLabel(s.status),x.needs.map(need).join('; '),tCrit(x).map((c,i)=>(i+1)+') '+c).join(' '),s.note].map(q).join(',')});
+  const r=TASKS.map(x=>{const s=ts(x.id);return [lab(x),TEAM(x.team),x.module,x.feature,tName(x),role(x.role),effort(x),wk(x.ws),wk(x.we),s.owner,stLabel(s.status),x.needs.map(need).join('; '),tCrit(x).map((c,i)=>(i+1)+') '+c).join(' '),s.note].map(q).join(',')});
   dl(`RegenEngine_Sprint2_Tasks_${LANG.toUpperCase()}.csv`,'﻿'+[h.map(q).join(','),...r].join('\n'),'text/csv');};
 async function sourceHtml(){
   if(location.protocol!=='file:'){
